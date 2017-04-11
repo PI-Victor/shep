@@ -1,23 +1,10 @@
 package fs
 
-var (
-	defaultCfg = `
-{
-  "debugLevel": 3,
-  "githubUser": "",
-  "githubToken": "",
-  "jenkinsURL": "",
-  "jenkinsAPI": "",
-  "jenkinsToken": "",
-  "travisToken": "",
-  "watchList": [],
-}
-`
-)
+import "github.com/Sirupsen/logrus"
 
 // Config holds the configuration options for the application.
 type Config struct {
-	DebugLevel int `json:"debugLevel"`
+	DebugLevel logrus.Level `json:"debugLevel"`
 
 	GitHubUser  string `json:"githubUser"`
 	GitHubToken string `json:"gitHubToken"`
@@ -35,7 +22,15 @@ type Config struct {
 	WatchList []string `json:"watchList"`
 }
 
-// NewConfig returns a new config instance.
+// NewConfig returns a new empty config instance.
 func NewConfig() *Config {
 	return &Config{}
+}
+
+// NewDefaultConfig is the default config that is used to generate a new
+// config.json file
+func NewDefaultConfig() *Config {
+	return &Config{
+		DebugLevel: logrus.InfoLevel,
+	}
 }
