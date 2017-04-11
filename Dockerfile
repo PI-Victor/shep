@@ -18,3 +18,7 @@ ENV PATH=$LGOBIN:$PATH
 RUN curl https://glide.sh/get | sh
 
 WORKDIR $GOPATH/src/github.com/PI-Victor/shep
+
+COPY glide.yaml ./ glide.lock ./
+
+RUN glide install

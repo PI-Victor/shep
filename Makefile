@@ -2,7 +2,7 @@ build:
 	@echo "Building Go builder image"
 	docker build -t go_builder .
 	@echo "Installing Glide deps"
-	docker run -it --rm -v `pwd`:/go/src/github.com/PI-Victor/shep go_builder glide install && make compile
+	docker run -it --rm -v `pwd`:/go/src/github.com/PI-Victor/shep go_builder make compile
 
 compile:
 	@echo "Removing previously built binaries"
