@@ -1,2 +1,3 @@
 package: github.com/PI-Victor/shep
-import: []
+import:
+- package: golang.org/x/oauth2
