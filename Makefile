@@ -11,7 +11,7 @@ compile:
 	@cd cmd/shep/ && go build -o ../../_output/bin/shep -v .
 
 install:
-	@echo "Creating symlink in $GOPATH/bin"
+	@echo "Creating symlink in $(GOPATH)/bin"
 	@rm $(GOPATH)/bin/shep
 	@ln -s `pwd`/_output/bin/shep $(GOPATH)/bin
 
