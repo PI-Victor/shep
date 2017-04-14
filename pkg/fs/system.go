@@ -1,6 +1,12 @@
 package fs
 
-import "github.com/Sirupsen/logrus"
+import (
+	"encoding/json"
+	"os"
+	"path"
+
+	"github.com/Sirupsen/logrus"
+)
 
 // IRCSettings holds information about one or more IRC servers that the bot
 // could join.
@@ -55,6 +61,33 @@ func newDefaultConfig() *Config {
 
 // CreateDefaultCfg creates a default config.json in the current working
 // directory.
-func CreateDefaultCfg() error {
+func CreateDefaultCfg(dir string) error {
+	var err error
+	cfgDir := dir
+
+	if cfgDir == "" {
+		cfgDir, err = os.Getwd()
+		if err != nil {
+			return err
+		}
+	}
+
+	cfgFile := path.Join(cfgDir, ".shep.json")
+	logrus.Print(cfgFile)
+	fh, err := os.Create(cfgFile)
+	if err != nil {
+		return err
+	}
+	defer fh.Close()
+
+	newDefaultCfg := newDefaultConfig()
+	config, err := json.MarshalIndent(newDefaultCfg, "", " ")
+	if err != nil {
+		return err
+	}
+	if _, err := fh.Write(config); err != nil {
+		return err
+	}
+
 	return nil
 }

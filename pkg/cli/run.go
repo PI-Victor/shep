@@ -41,12 +41,14 @@ var ConfigCmd = &cobra.Command{
 	Example: `
 Create a default configuration file for the application. If you omit --dir, the
 configuration is created in the current working directory of the application.
-  `,
+`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logrus.Print("Creating default config.")
+		if err := fs.CreateDefaultCfg(cfgDir); err != nil {
+			logrus.Fatalf("an error occured while generating a default config: %s", err)
+		}
 	},
 }
 
 func init() {
-	ConfigCmd.PersistentFlags().StringVar(&cfgDir, "dir", "", "the dir where the default config is to be created.")
+	ConfigCmd.PersistentFlags().StringVar(&cfgDir, "dir", "", "set the dir where the default config should be created.")
 }
