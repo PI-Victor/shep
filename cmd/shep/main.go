@@ -18,15 +18,14 @@ var rootCmd = &cobra.Command{
 
 func main() {
 	rootCmd.AddCommand(cli.StartCmd)
+	rootCmd.AddCommand(cli.ConfigCmd)
 	rootCmd.Execute()
 }
 
 func init() {
-	viper.AddConfigPath("$HOME/.shep")
+	viper.AddConfigPath("$HOME/shep")
+	viper.AddConfigPath("/etc/shep")
 	viper.AddConfigPath(".")
 	viper.SetConfigFile("config.json")
 	logrus.SetLevel(logrus.DebugLevel)
-	if err := viper.ReadInConfig(); err != nil {
-		logrus.Fatalf("Failed to read Shep config %s", err)
-	}
 }
