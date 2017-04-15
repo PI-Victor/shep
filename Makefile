@@ -1,19 +1,20 @@
+BUILD_AS_USER=$(shell grep -i "$(USER)" /etc/passwd | cut -d: -f3)
 build:
 	@echo "Building Go builder image"
 	@docker build -t go_builder .
 	@echo "Building binary, will be available in _output/bin/"
-	@docker run -it --rm -v `pwd`:/go/src/github.com/PI-Victor/shep go_builder make compile
+	docker run -it --rm -u $(BUILD_AS_USER) -v `pwd`:/go/src/github.com/PI-Victor/shep go_builder make compile
 
 compile:
 	@echo "Removing previously built binaries"
 	@rm -rf _output/bin || true
 	@mkdir -p _output/bin
-	@cd cmd/shep/ && go build -o ../../_output/bin/shep -v .
+	@cd cmd/shep/ && CGO_ENABLED=0 go build --ldflags '-extldflags "-static"' -o ../../_output/bin/shep -v .
 
 install:
-	@echo "Creating symlink in $(GOPATH)/bin"
-	@rm $(GOPATH)/bin/shep
-	@ln -s `pwd`/_output/bin/shep $(GOPATH)/bin
+	@echo "Creating symlink in ${GOPATH}/bin"
+	@rm ${GOPATH}/bin/shep || true
+	@ln -s `pwd`/_output/bin/shep ${GOPATH}/bin
 
 test:
 	@echo "Running tests..."

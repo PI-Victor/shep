@@ -24,3 +24,4 @@ _testmain.go
 *.prof
 .shep.json
 .glide
+_output
