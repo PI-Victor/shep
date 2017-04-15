@@ -36,12 +36,12 @@ type Config struct {
 
 	IRCServers []IRCSettings `json:"ircServers"`
 
-	JenkinsServers []JenkinsSettings `json:"jenkinsServers"`
-
 	GitHubUser  string `json:"githubUser"`
 	GitHubToken string `json:"gitHubToken"`
 	// A list of URLs that the bot can ignore.
 	GitHubIgnoreList []string `json:"gitHubIgnoreList"`
+
+	JenkinsServers []JenkinsSettings `json:"jenkinsServers"`
 
 	TravisToken string `json:"travisToken"`
 }

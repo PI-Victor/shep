@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	cfgDir string
+	cfgDir        string
+	defaultCfgDir string
 )
 
 // StartCmd starts the bot.
@@ -22,8 +23,17 @@ shep start - Starts the bot with the configuration provided in
 ~/.shep/config.json.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		// only search the dir passed as parameter so that we don't load some
+		// already created config by mistake.
+		if cfgDir != "" {
+			viper.AddConfigPath(cfgDir)
+		} else {
+			viper.AddConfigPath("$HOME/shep")
+			viper.AddConfigPath("/etc/shep")
+			viper.AddConfigPath(".")
+		}
 		if err := viper.ReadInConfig(); err != nil {
-			logrus.Fatalf("Failed to read config %s. See `shep config`.", err)
+			logrus.Fatalf("Failed to read config: %s", err)
 		}
 		newCfg := fs.NewConfig()
 		if err := viper.Unmarshal(newCfg); err != nil {
@@ -50,5 +60,6 @@ configuration is created in the current working directory of the application.
 }
 
 func init() {
-	ConfigCmd.PersistentFlags().StringVar(&cfgDir, "dir", "", "set the dir where the default config should be created.")
+	StartCmd.PersistentFlags().StringVar(&cfgDir, "config", "", "specify the config dir.")
+	ConfigCmd.PersistentFlags().StringVar(&defaultCfgDir, "dir", "", "set the dir where the default config should be created.")
 }

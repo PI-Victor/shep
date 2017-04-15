@@ -17,15 +17,16 @@ var rootCmd = &cobra.Command{
 }
 
 func main() {
-	rootCmd.AddCommand(cli.StartCmd)
-	rootCmd.AddCommand(cli.ConfigCmd)
-	rootCmd.Execute()
+	rootCmd.AddCommand(
+		cli.StartCmd,
+		cli.ConfigCmd,
+	)
+	if err := rootCmd.Execute(); err != nil {
+		logrus.Fatal(err)
+	}
 }
 
 func init() {
-	viper.AddConfigPath("$HOME/shep")
-	viper.AddConfigPath("/etc/shep")
-	viper.AddConfigPath(".")
-	viper.SetConfigFile("config.json")
+	viper.SetConfigFile(".shep.json")
 	logrus.SetLevel(logrus.DebugLevel)
 }
