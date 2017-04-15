@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/PI-Victor/shep/pkg/fs"
-	"github.com/PI-Victor/shep/pkg/service"
+	"github.com/PI-Victor/shep/pkg/scheduler"
 )
 
 var (
@@ -39,8 +39,10 @@ shep start - Starts the bot with the configuration provided in
 		if err := viper.Unmarshal(newCfg); err != nil {
 			logrus.Fatalf("An error occured while reading the config: %s", err)
 		}
-		newService := service.NewService()
-		newService.Start(newCfg)
+		newScheduler := scheduler.NewScheduler()
+		if err := newScheduler.Start(newCfg); err != nil {
+			logrus.Fatalf("an error occured while starting the application: %s", err)
+		}
 	},
 }
 

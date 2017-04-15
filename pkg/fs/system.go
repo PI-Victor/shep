@@ -6,6 +6,7 @@ import (
 	"path"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/google/go-github/github"
 )
 
 // IRCSettings holds information about one or more IRC servers that the bot
@@ -30,20 +31,33 @@ type JenkinsSettings struct {
 	JenkinsToken string `json:"jenkinsToken"`
 }
 
+// GitHub holds specific information that is used for GitHub integration.
+type GitHub struct {
+	User  github.User `json:"-"`
+	Token string      `json:"token"`
+
+	// A list of URLs that the bot can ignore.
+	RepoIgnoreList []string `json:"repoIgnoreList,omitempty"`
+	// Holds the client instance details. Internal only.
+	Client github.Client `json:"-"`
+}
+
+// Redis has information about a redis instance.
+type Redis struct{}
+
 // Config holds the configuration options for the application.
 type Config struct {
 	DebugLevel logrus.Level `json:"debugLevel"`
 
 	IRCServers []IRCSettings `json:"ircServers"`
 
-	GitHubUser  string `json:"githubUser"`
-	GitHubToken string `json:"gitHubToken"`
-	// A list of URLs that the bot can ignore.
-	GitHubIgnoreList []string `json:"gitHubIgnoreList"`
+	GitHub GitHub `json:"gitHub"`
 
-	JenkinsServers []JenkinsSettings `json:"jenkinsServers"`
+	JenkinsServers []JenkinsSettings `json:"jenkinsServers, omitempty"`
 
 	TravisToken string `json:"travisToken"`
+
+	Redis Redis `json:"redis"`
 }
 
 // NewConfig returns a new empty config instance.
