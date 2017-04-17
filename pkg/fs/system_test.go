@@ -16,8 +16,12 @@ func TestNewConfig(t *testing.T) {
 }
 
 func TestNewDefaultConfig(t *testing.T) {
-	newDefaultCfg := NewDefaultConfig()
+	newDefaultCfg := newDefaultConfig()
 	if newDefaultCfg.DebugLevel != logrus.InfoLevel {
 		t.Errorf("Expected DebugLevel to be %d", logrus.InfoLevel)
 	}
+}
+
+func TestCreateDefaultCfg(t *testing.T) {
+
 }
