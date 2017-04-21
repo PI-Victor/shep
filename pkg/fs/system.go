@@ -39,7 +39,7 @@ type GitHub struct {
 	// A list of URLs that the bot can ignore.
 	RepoIgnoreList []string `json:"repoIgnoreList,omitempty"`
 	// Holds the client instance details. Internal only.
-	Client github.Client `json:"-"`
+	Client *github.Client `json:"-"`
 }
 
 // Redis has information about a redis instance.

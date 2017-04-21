@@ -29,6 +29,7 @@ func (s *Scheduler) Start(cfg *fs.Config) error {
 		if err != nil {
 			return err
 		}
+		logrus.Debug("Sleeping...")
 		time.Sleep(10 * time.Second)
 	}
 }

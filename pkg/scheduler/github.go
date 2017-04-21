@@ -37,22 +37,29 @@ func NewGitHubClient(cfg *fs.Config) error {
 // of for events such as comments or PRs.
 func WatchRepos(cfg *fs.Config) error {
 	ctx := context.Background()
-	logrus.Println(&cfg.GitHub.Client)
-	logrus.Println(cfg.GitHub.User.GetBio())
-	client := &cfg.GitHub.Client
-	orgs, _, err := client.Organizations.List(ctx, "", nil)
+	client := cfg.GitHub.Client
+	orgs, _, err := client.Organizations.List(ctx, cfg.GitHub.User.GetLogin(), nil)
 	if err != nil {
 		return err
 	}
 	for _, org := range orgs {
-		projects, _, err := cfg.GitHub.Client.Organizations.ListProjects(ctx, org.GetName(), nil)
+		repos, _, err := client.Repositories.ListByOrg(ctx, org.GetLogin(), nil)
 		if err != nil {
 			return err
 		}
-
-		for _, proj := range projects {
-			logrus.Println(proj)
-			//logrus.Printf("This is the Org: %s and repo: %s", *org.Name, *proj.Name)
+		for _, repo := range repos {
+			_, _, err := client.PullRequests.GetComment(ctx, org.GetLogin(), "shep_test", 0)
+			if err != nil {
+				return err
+			}
+			comments, _, err := client.PullRequests.ListComments(ctx, org.GetLogin(), repo.GetName(), 0, nil)
+			if err != nil {
+				return err
+			}
+			logrus.Debugf("the org: %s, repo: %s, comments: %#v", org.GetLogin(), repo.GetName(), comments)
+			for _, com := range comments {
+				logrus.Debugf("Comment: %#v", com.GetBody())
+			}
 		}
 	}
 	return nil
