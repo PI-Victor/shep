@@ -35,32 +35,32 @@ func NewGitHubClient(cfg *fs.Config) error {
 
 // WatchRepos watches the repositories in the organization that the bot is part
 // of for events such as comments or PRs.
-func WatchRepos(cfg *fs.Config) error {
+func WatchRepos(ghDetails *fs.GitHub) error {
 	ctx := context.Background()
-	client := cfg.GitHub.Client
-	orgs, _, err := client.Organizations.List(ctx, cfg.GitHub.User.GetLogin(), nil)
+	client := ghDetails.Client
+	opt := &github.NotificationListOptions{
+		All: true,
+	}
+	notifications, _, err := client.Activity.ListNotifications(ctx, opt)
 	if err != nil {
 		return err
 	}
-	for _, org := range orgs {
-		repos, _, err := client.Repositories.ListByOrg(ctx, org.GetLogin(), nil)
-		if err != nil {
-			return err
-		}
-		for _, repo := range repos {
-			_, _, err := client.PullRequests.GetComment(ctx, org.GetLogin(), "shep_test", 0)
-			if err != nil {
-				return err
-			}
-			comments, _, err := client.PullRequests.ListComments(ctx, org.GetLogin(), repo.GetName(), 0, nil)
-			if err != nil {
-				return err
-			}
-			logrus.Debugf("the org: %s, repo: %s, comments: %#v", org.GetLogin(), repo.GetName(), comments)
-			for _, com := range comments {
-				logrus.Debugf("Comment: %#v", com.GetBody())
-			}
-		}
+	for _, n := range notifications {
+		logrus.Debug(n)
 	}
+	return nil
+}
+
+func setRepoWatchTrue(ghDetails *fs.GitHub) error {
+	ctx := context.Background()
+	client := ghDetails.Client
+	user := ghDetails.User
+	subscription := github.Subscription{}
+	// TODO: list all repos available (only org for now) and set subscription to max
+	sub, err := client.Activity.SetRepositorySubscription(ctx, user.GetLogin(), subscription)
+	if err != nil {
+		return err
+	}
+	logrus.Debug(client, sub)
 	return nil
 }

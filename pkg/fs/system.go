@@ -51,7 +51,7 @@ type Config struct {
 
 	IRCServers []IRCSettings `json:"ircServers"`
 
-	GitHub GitHub `json:"gitHub"`
+	GitHub *GitHub `json:"gitHub"`
 
 	JenkinsServers []JenkinsSettings `json:"jenkinsServers, omitempty"`
 

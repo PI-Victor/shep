@@ -25,7 +25,7 @@ func (s *Scheduler) Start(cfg *fs.Config) error {
 		if err != nil {
 			return err
 		}
-		err = WatchRepos(cfg)
+		err = WatchRepos(cfg.GitHub)
 		if err != nil {
 			return err
 		}
