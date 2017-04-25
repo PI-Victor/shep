@@ -20,13 +20,15 @@ func NewScheduler() *Scheduler {
 // Start starts the bot service.
 func (s *Scheduler) Start(cfg *fs.Config) error {
 	logrus.Info("Starting Shep... ")
-	err := NewGitHubClient(cfg)
+
+	if err := NewGitHubClient(cfg); err != nil {
+		return err
+	}
+	if err := setRepoSubTrue(cfg.GitHub); err != nil {
+		return err
+	}
 	for {
-		if err != nil {
-			return err
-		}
-		err = WatchRepos(cfg.GitHub)
-		if err != nil {
+		if err := WatchRepos(cfg.GitHub); err != nil {
 			return err
 		}
 		logrus.Debug("Sleeping...")

@@ -38,6 +38,7 @@ func NewGitHubClient(cfg *fs.Config) error {
 func WatchRepos(ghDetails *fs.GitHub) error {
 	ctx := context.Background()
 	client := ghDetails.Client
+	//user := ghDetails.User.GetLogin()
 	opt := &github.NotificationListOptions{
 		All: true,
 	}
@@ -45,22 +46,45 @@ func WatchRepos(ghDetails *fs.GitHub) error {
 	if err != nil {
 		return err
 	}
-	for _, n := range notifications {
-		logrus.Debug(n)
+	for _, notification := range notifications {
+		logrus.Debugf("%#v", *notification.Repository.IssuesURL)
+		org := notification.Repository.Organization
+		repo := notification.Repository
+		//logrus.Printf("This is the org: %#v. This is the repo: %#v", org)
+		comments, _, err := client.PullRequests.GetComment(ctx, org.GetLogin(), repo.GetName(), 0)
+		if err != nil {
+			return err
+		}
+		logrus.Println(comments)
 	}
 	return nil
 }
 
-func setRepoWatchTrue(ghDetails *fs.GitHub) error {
+func setRepoSubTrue(ghDetails *fs.GitHub) error {
 	ctx := context.Background()
 	client := ghDetails.Client
-	user := ghDetails.User
-	subscription := github.Subscription{}
-	// TODO: list all repos available (only org for now) and set subscription to max
-	sub, err := client.Activity.SetRepositorySubscription(ctx, user.GetLogin(), subscription)
+	//user := ghDetails.User.GetLogin()
+	subed := true
+	subscription := github.Subscription{
+		Subscribed: &subed,
+	}
+
+	orgs, _, err := client.Organizations.List(ctx, "", nil)
 	if err != nil {
 		return err
 	}
-	logrus.Debug(client, sub)
+	for _, org := range orgs {
+		repos, _, err := client.Repositories.ListByOrg(ctx, org.GetLogin(), nil)
+		if err != nil {
+			return err
+		}
+		for _, repo := range repos {
+			sub, _, err := client.Activity.SetRepositorySubscription(ctx, org.GetLogin(), repo.GetName(), &subscription)
+			if err != nil {
+				return err
+			}
+			logrus.Debugf("Subscribed to repository: %s", sub.GetRepositoryURL())
+		}
+	}
 	return nil
 }
