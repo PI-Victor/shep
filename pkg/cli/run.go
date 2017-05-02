@@ -35,9 +35,12 @@ shep start - Starts the bot with the configuration provided in
 		if err := viper.ReadInConfig(); err != nil {
 			logrus.Fatalf("Failed to read config: %s", err)
 		}
-		newCfg := fs.NewConfig()
+		newCfg := fs.NewCfg()
 		if err := viper.Unmarshal(newCfg); err != nil {
 			logrus.Fatalf("An error occured while reading the config: %s", err)
+		}
+		if err := fs.ValidateCfg(newCfg); err != nil {
+			logrus.Fatalf("An error occured while validating the config: %s", err)
 		}
 		newScheduler := scheduler.NewScheduler()
 		if err := newScheduler.Start(newCfg); err != nil {
@@ -56,7 +59,7 @@ configuration is created in the current working directory of the application.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := fs.CreateDefaultCfg(cfgDir); err != nil {
-			logrus.Fatalf("an error occured while generating a default config: %s", err)
+			logrus.Fatalf("An error occured while generating a default config: %s", err)
 		}
 	},
 }

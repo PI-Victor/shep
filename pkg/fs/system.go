@@ -2,6 +2,7 @@ package fs
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path"
 
@@ -60,17 +61,25 @@ type Config struct {
 	Redis Redis `json:"redis"`
 }
 
-// NewConfig returns a new empty config instance.
-func NewConfig() *Config {
+// NewCfg returns a new empty config instance.
+func NewCfg() *Config {
 	return &Config{}
 }
 
 // NewDefaultConfig is the default config that is used to generate a new
 // config.json file
-func newDefaultConfig() *Config {
+func newDefaultCfg() *Config {
 	return &Config{
 		DebugLevel: logrus.InfoLevel,
 	}
+}
+
+// ValidateCfg validates the configuration.
+func ValidateCfg(cfg *Config) error {
+	if cfg.GitHub == nil {
+		return errors.New("you need to specify a GitHub token")
+	}
+	return nil
 }
 
 // CreateDefaultCfg creates a default config.json in the current working
@@ -94,7 +103,7 @@ func CreateDefaultCfg(dir string) error {
 	}
 	defer fh.Close()
 
-	newDefaultCfg := newDefaultConfig()
+	newDefaultCfg := newDefaultCfg()
 	config, err := json.MarshalIndent(newDefaultCfg, "", " ")
 	if err != nil {
 		return err
