@@ -10,7 +10,6 @@ import (
 )
 
 var (
-	cfgDir        string
 	defaultCfgDir string
 )
 
@@ -19,19 +18,10 @@ var StartCmd = &cobra.Command{
 	Use:   "start",
 	Short: "start Shep",
 	Example: `
-shep start - Starts the bot with the configuration provided in
-~/.shep/config.json.
+shep start - Starts the application.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		// only search the dir passed as parameter so that we don't load some
-		// already created config by mistake.
-		if cfgDir != "" {
-			viper.AddConfigPath(cfgDir)
-		} else {
-			viper.AddConfigPath("$HOME/shep")
-			viper.AddConfigPath("/etc/shep")
-			viper.AddConfigPath(".")
-		}
+		viper.AddConfigPath(".")
 		if err := viper.ReadInConfig(); err != nil {
 			logrus.Fatalf("Failed to read config: %s", err)
 		}
@@ -54,17 +44,12 @@ var ConfigCmd = &cobra.Command{
 	Use:   "config",
 	Short: "creates a new config with default values.",
 	Example: `
-Create a default configuration file for the application. If you omit --dir, the
-configuration is created in the current working directory of the application.
+Create a default configuration file for the application in the current working
+directory.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := fs.CreateDefaultCfg(cfgDir); err != nil {
+		if err := fs.CreateDefaultCfg(); err != nil {
 			logrus.Fatalf("An error occured while generating a default config: %s", err)
 		}
 	},
-}
-
-func init() {
-	StartCmd.PersistentFlags().StringVar(&cfgDir, "config", "", "specify the config dir.")
-	ConfigCmd.PersistentFlags().StringVar(&defaultCfgDir, "dir", "", "set the dir where the default config should be created.")
 }

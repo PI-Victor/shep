@@ -27,6 +27,7 @@ func main() {
 }
 
 func init() {
-	viper.SetConfigFile(".shep.json")
+	viper.SetConfigFile(".shep")
+	viper.SetConfigType("json")
 	logrus.SetLevel(logrus.DebugLevel)
 }

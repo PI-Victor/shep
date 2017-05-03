@@ -23,9 +23,9 @@ func (s *Scheduler) Start(cfg *fs.Config) error {
 	if err := NewGitHubClient(cfg); err != nil {
 		return err
 	}
-	if err := setRepoSubTrue(cfg.GitHub); err != nil {
-		return err
-	}
+	go func() {
+		setRepoSubTrue(cfg.GitHub)
+	}()
 	for {
 		if err := WatchRepos(cfg.GitHub); err != nil {
 			return err

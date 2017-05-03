@@ -84,18 +84,13 @@ func ValidateCfg(cfg *Config) error {
 
 // CreateDefaultCfg creates a default config.json in the current working
 // directory.
-func CreateDefaultCfg(dir string) error {
-	var err error
-	cfgDir := dir
-
-	if cfgDir == "" {
-		cfgDir, err = os.Getwd()
-		if err != nil {
-			return err
-		}
+func CreateDefaultCfg() error {
+	cfgDir, err := os.Getwd()
+	if err != nil {
+		return err
 	}
 
-	cfgFile := path.Join(cfgDir, ".shep.json")
+	cfgFile := path.Join(cfgDir, ".shep")
 	logrus.Print(cfgFile)
 	fh, err := os.Create(cfgFile)
 	if err != nil {

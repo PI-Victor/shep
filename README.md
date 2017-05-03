@@ -18,6 +18,6 @@ The documentation can be found in the
 #### Running
 
 Before running the bot you need to create a default configuration. This can be
-done by running `shep config --dir`, it will create a `.shep.json` file with
+done by running `shep config --dir`, it will create a json `.shep` file with
 default config values. If you omit the `--dir` flag, it will create the config
 file in the application's current working directory.  

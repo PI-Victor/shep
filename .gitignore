@@ -22,6 +22,6 @@ _testmain.go
 *.exe
 *.test
 *.prof
-.shep.json
+.shep
 _output
 vendor.conf.tmp

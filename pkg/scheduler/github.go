@@ -60,7 +60,8 @@ func WatchRepos(ghDetails *fs.GitHub) error {
 	return nil
 }
 
-func setRepoSubTrue(ghDetails *fs.GitHub) error {
+func setRepoSubTrue(ghDetails *fs.GitHub) {
+	// TODO: implement block repos.
 	ctx := context.Background()
 	client := ghDetails.Client
 	//user := ghDetails.User.GetLogin()
@@ -71,20 +72,20 @@ func setRepoSubTrue(ghDetails *fs.GitHub) error {
 
 	orgs, _, err := client.Organizations.List(ctx, "", nil)
 	if err != nil {
-		return err
+		logrus.Warnf("Failed to list organizations: %s", err)
 	}
 	for _, org := range orgs {
 		repos, _, err := client.Repositories.ListByOrg(ctx, org.GetLogin(), nil)
 		if err != nil {
-			return err
+			logrus.Warnf("Failed to get organization repos: %s", err)
 		}
 		for _, repo := range repos {
 			sub, _, err := client.Activity.SetRepositorySubscription(ctx, org.GetLogin(), repo.GetName(), &subscription)
 			if err != nil {
-				return err
+				logrus.Warnf("Failed to subscribe to repository: %s (%s)", repo, err)
+				continue
 			}
 			logrus.Debugf("Subscribed to repository: %s", sub.GetRepositoryURL())
 		}
 	}
-	return nil
 }
