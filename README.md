@@ -12,13 +12,8 @@ The documentation can be found in the
 [Wiki](https://github.com/PI-Victor/shep/wiki).
 
 #### Compiling
-You don't need Go installed to compile this from source. But you do need `make`
-and `docker`.  
-If you have `Go` installed, just do `make compile`.  
-
-`make` will create a binary in `_output/bin/shep`. `make install` will create a
-symlink in `$GOPATH/bin`. If you don't have a `$GOPATH` set, then set one just do `GOPATH=~/ make install`.  
-
+`make` - compiles the binary in `_output/bin/`
+`make install` - creates a symlink of `_output/bin/shep` in `$GOPATH/bin/shep`
 
 #### Running
 

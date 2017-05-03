@@ -23,6 +23,5 @@ _testmain.go
 *.test
 *.prof
 .shep.json
-.glide
 _output
-vendor
+vendor.conf.tmp
