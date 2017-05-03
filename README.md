@@ -12,8 +12,8 @@ The documentation can be found in the
 [Wiki](https://github.com/PI-Victor/shep/wiki).
 
 #### Compiling
-`make` - compiles the binary in `_output/bin/`
-`make install` - creates a symlink of `_output/bin/shep` in `$GOPATH/bin/shep`
+`make` - compiles the binary in `_output/bin/`  
+`make install` - creates a symlink of `_output/bin/shep` in `$GOPATH/bin/shep`  
 
 #### Running
 
