@@ -1,9 +1,5 @@
 ### Shep
-
-![alt text](assets/shep.jpg "shep")  
-*In memory of Shep that, against **The Earl de Darkwood**, saved the
-[Crescentdolls](https://en.wikipedia.org/wiki/Interstella_5555:_The_5tory_of_the_5ecret_5tar_5ystem#Characters)
-and restored order to the galaxy.*
+[![CircleCI](https://circleci.com/gh/PI-Victor/shep/tree/master.svg?style=svg)](https://circleci.com/gh/PI-Victor/shep/tree/master)
 
 An attempt at a vcs monitoring bot with various integrations such as: Jenkins.
 Travis. Concourse. IRC.
@@ -19,4 +15,4 @@ The documentation can be found in the
 
 Before running the bot you need to create a default configuration. This can be
 done by running `shep config`, it will create a json `.shep` file with
-default config values in the current working directory. 
+default config values in the current working directory.
