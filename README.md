@@ -4,8 +4,7 @@
 An attempt at a vcs monitoring bot with various integrations such as: Jenkins.
 Travis. Concourse. IRC.
 
-The documentation can be found in the
-[Wiki](https://github.com/PI-Victor/shep/wiki).
+The documentation can be found in the [docs dir](docs).
 
 #### Compiling
 `make` - compiles the binary in `_output/bin/`  
