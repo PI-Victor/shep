@@ -2,6 +2,9 @@ package scheduler
 
 import (
 	"context"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -11,7 +14,9 @@ import (
 	"github.com/PI-Victor/shep/pkg/fs"
 )
 
-var lastCheck time.Time
+var (
+	lastCheck time.Time
+)
 
 // NewGitHubClient returns a valid instance of a new GitHub client.
 func NewGitHubClient(cfg *fs.Config) error {
@@ -36,32 +41,67 @@ func NewGitHubClient(cfg *fs.Config) error {
 // WatchRepos watches the repositories in the organization that the bot is part
 // of for events such as comments or PRs.
 func WatchRepos(ghDetails *fs.GitHub) error {
+	// NOTE: i don't think i should use context.Background like this, need to look
+	// into it.
 	ctx := context.Background()
 	client := ghDetails.Client
-	//user := ghDetails.User.GetLogin()
-	opt := &github.NotificationListOptions{
-		All: true,
-	}
+	opt := &github.NotificationListOptions{All: true}
+
 	notifications, _, err := client.Activity.ListNotifications(ctx, opt)
 	if err != nil {
 		return err
 	}
 	for _, notification := range notifications {
-		logrus.Debugf("%#v", *notification.Repository.IssuesURL)
-		org := notification.Repository.Organization
-		repo := notification.Repository
-		//logrus.Printf("This is the org: %#v. This is the repo: %#v", org)
-		comments, _, err := client.PullRequests.GetComment(ctx, org.GetLogin(), repo.GetName(), 0)
+		parts := strings.Split(*notification.Subject.URL, "/")
+		repo := notification.Repository.GetName()
+		last := parts[len(parts)-1]
+		org := parts[len(parts)-4]
+		id, err := strconv.Atoi(last)
+		id = int(id)
 		if err != nil {
 			return err
 		}
-		logrus.Println(comments)
+		comments, _, err := client.Issues.ListComments(ctx, org, repo, id, nil)
+		if err != nil {
+			logrus.Warning(err)
+			continue
+		}
+		for _, comment := range comments {
+			if lastCheck.Before(comment.GetCreatedAt()) {
+				if err := checkComment(comment.GetBody(), org, repo, id); err != nil {
+					logrus.Warningf("failed to apply action %s", err)
+				}
+			}
+		}
+	}
+	lastCheck = time.Now()
+	return nil
+}
+
+func checkComment(body string, org, repo string, id int) error {
+	match, err := regexp.Match("[[a-zA-Z]+]", []byte(body))
+	if err != nil {
+		return err
+	}
+	if match {
+		comm := strings.Trim(body, "[]")
+		if comm == "test" {
+			commentPR(org, repo, id)
+		}
 	}
 	return nil
 }
 
+func commentPR(org, repo string, id int) {
+	logrus.Info("test")
+}
+
+func mergeCommit() error {
+	return nil
+}
+
 func setRepoSubTrue(ghDetails *fs.GitHub) {
-	// TODO: implement block repos.
+	// TODO: implement black-lister repos.
 	ctx := context.Background()
 	client := ghDetails.Client
 	//user := ghDetails.User.GetLogin()
@@ -74,6 +114,7 @@ func setRepoSubTrue(ghDetails *fs.GitHub) {
 	if err != nil {
 		logrus.Warnf("Failed to list organizations: %s", err)
 	}
+	// refactor this to avoid O(n)
 	for _, org := range orgs {
 		repos, _, err := client.Repositories.ListByOrg(ctx, org.GetLogin(), nil)
 		if err != nil {

@@ -1,5 +1,5 @@
 ### Shep
-[![CircleCI](https://circleci.com/gh/PI-Victor/shep/tree/master.svg?style=svg)](https://circleci.com/gh/PI-Victor/shep/tree/master)
+[![CircleCI](https://circleci.com/gh/PI-Victor/shep/tree/master.svg?style=svg)](https://circleci.com/gh/PI-Victor/shep/tree/master) [![Coverage Status](https://coveralls.io/repos/github/PI-Victor/shep/badge.svg?branch=master)](https://coveralls.io/github/PI-Victor/shep?branch=master)
 
 An attempt at a vcs monitoring bot with various integrations such as: Jenkins.
 Travis. Concourse. IRC.
