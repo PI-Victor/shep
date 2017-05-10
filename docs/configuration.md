@@ -13,7 +13,7 @@ e.g.
 }
 ```
 
-`debugLevel` - The application logs verbosity.   
+`debugLevel` - The application log verbosity.   
 4 - Debug  
 3 - Info  
 2 - Warn  
