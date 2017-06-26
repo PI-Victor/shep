@@ -3,7 +3,7 @@ package scheduler
 import (
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	"github.com/PI-Victor/shep/pkg/fs"
 )

@@ -4,7 +4,8 @@ Functionality
 
 #### Short-term  
 Proposed short-term functionality:
-* GitHub normal operation workflow is established in regards to testing/merging PRs that depend on Jenkins and Concourse.  
+* GitHub normal operation workflow is established in regards to testing/merging PRs that depends on Jenkins and Concourse.
+* adds standard labels within an organization.  
 * recognizes the users based on privileges (probably based on team privileges).
 * posts to an IRC channel whenever someone opens/merges/closes a PR.
 * labeling PRs with the `needs-rebase` label whenever there are merge conflicts.

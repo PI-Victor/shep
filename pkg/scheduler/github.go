@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/google/go-github/github"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
 	"github.com/PI-Victor/shep/pkg/fs"
@@ -93,7 +93,7 @@ func checkComment(body string, org, repo string, id int) error {
 }
 
 func commentPR(org, repo string, id int) {
-	logrus.Info("test")
+
 }
 
 func mergeCommit() error {
@@ -101,7 +101,7 @@ func mergeCommit() error {
 }
 
 func setRepoSubTrue(ghDetails *fs.GitHub) {
-	// TODO: implement black-lister repos.
+	// TODO: implement black-listed repos.
 	ctx := context.Background()
 	client := ghDetails.Client
 	//user := ghDetails.User.GetLogin()

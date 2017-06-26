@@ -6,8 +6,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/google/go-github/github"
+	"github.com/sirupsen/logrus"
 )
 
 // IRCSettings holds information about one or more IRC servers that the bot
