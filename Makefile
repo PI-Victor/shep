@@ -9,7 +9,3 @@ install:
 	@echo "Creating symlink in ${GOPATH}/bin"
 	@rm ${GOPATH}/bin/shep || true
 	@ln -s `pwd`/_output/bin/shep ${GOPATH}/bin
-
-test:
-	@echo "Running tests..."
-	@docker run -it --rm -v `pwd`:/go/src/github.com/PI-Victor/shep go_builder go test -v ./pkg/
