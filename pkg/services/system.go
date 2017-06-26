@@ -1,4 +1,4 @@
-package fs
+package services
 
 import (
 	"encoding/json"
@@ -6,45 +6,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/google/go-github/github"
 	"github.com/sirupsen/logrus"
 )
-
-// IRCSettings holds information about one or more IRC servers that the bot
-// could join.
-type IRCSettings struct {
-	IRCServers []IRCServer `json:"ircServers"`
-}
-
-// IRCServer holds information regarding one or more IRC servers that the bot
-// should connect to.
-type IRCServer struct {
-	ServerName string   `json:"serverName"`
-	Nick       string   `json:"nick"`
-	Channels   []string `json:"channels"`
-}
-
-// JenkinsSettings holds the information about one or more Jenkins servers that
-// the bot should send or retrieve information from.
-type JenkinsSettings struct {
-	JenkinsURL   string `json:"jenkinsURL"`
-	JenkinsUser  string `json:"jenkinsUser"`
-	JenkinsToken string `json:"jenkinsToken"`
-}
-
-// GitHub holds specific information that is used for GitHub integration.
-type GitHub struct {
-	User  github.User `json:"-"`
-	Token string      `json:"token"`
-
-	// A list of URLs that the bot can ignore.
-	RepoIgnoreList []string `json:"repoIgnoreList,omitempty"`
-	// Holds the client instance details. Internal only.
-	Client *github.Client `json:"-"`
-}
-
-// Redis has information about a redis instance.
-type Redis struct{}
 
 // Config holds the configuration options for the application.
 type Config struct {
@@ -56,9 +19,7 @@ type Config struct {
 
 	JenkinsServers []JenkinsSettings `json:"jenkinsServers, omitempty"`
 
-	TravisToken string `json:"travisToken"`
-
-	Redis Redis `json:"redis"`
+	Travis Travis `json:"travis"`
 }
 
 // NewCfg returns a new empty config instance.

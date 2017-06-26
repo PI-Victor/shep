@@ -15,3 +15,5 @@ The documentation can be found in the [docs dir](docs).
 Before running the bot you need to create a default configuration. This can be
 done by running `shep config`, it will create a json `.shep` file with
 default config values in the current working directory.
+
+For more information see the [roadmap](https://github.com/PI-Victor/shep/projects/2).

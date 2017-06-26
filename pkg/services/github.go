@@ -1,7 +1,8 @@
-package scheduler
+package services
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -10,16 +11,25 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
-
-	"github.com/PI-Victor/shep/pkg/fs"
 )
 
 var (
 	lastCheck time.Time
 )
 
+// GitHub holds specific information that is used for GitHub integration.
+type GitHub struct {
+	User  github.User `json:"-"`
+	Token string      `json:"token"`
+
+	// A list of URLs that the bot can ignore.
+	IgnoreRepos []string `json:"ignoreRepos,omitempty"`
+	// Holds the client instance details. Internal only.
+	Client *github.Client `json:"-"`
+}
+
 // NewGitHubClient returns a valid instance of a new GitHub client.
-func NewGitHubClient(cfg *fs.Config) error {
+func NewGitHubClient(cfg *Config) error {
 	ctx := context.Background()
 	tokenSrc := oauth2.StaticTokenSource(
 		&oauth2.Token{
@@ -40,7 +50,7 @@ func NewGitHubClient(cfg *fs.Config) error {
 
 // WatchRepos watches the repositories in the organization that the bot is part
 // of for events such as comments or PRs.
-func WatchRepos(ghDetails *fs.GitHub) error {
+func WatchRepos(ghDetails *GitHub) error {
 	// NOTE: i don't think i should use context.Background like this, need to look
 	// into it.
 	ctx := context.Background()
@@ -52,12 +62,14 @@ func WatchRepos(ghDetails *fs.GitHub) error {
 		return err
 	}
 	for _, notification := range notifications {
+		// TODO: replace this with a proper group regexp.
 		parts := strings.Split(*notification.Subject.URL, "/")
 		repo := notification.Repository.GetName()
 		last := parts[len(parts)-1]
 		org := parts[len(parts)-4]
 		id, err := strconv.Atoi(last)
 		id = int(id)
+		fmt.Printf("Current notification URL: %s\n", *notification.Subject.URL)
 		if err != nil {
 			return err
 		}
@@ -79,6 +91,8 @@ func WatchRepos(ghDetails *fs.GitHub) error {
 }
 
 func checkComment(body string, org, repo string, id int) error {
+	// TODO: replace with proper regexp, maybe have a list of keywords to look
+	// for.
 	match, err := regexp.Match("[[a-zA-Z]+]", []byte(body))
 	if err != nil {
 		return err
@@ -93,15 +107,16 @@ func checkComment(body string, org, repo string, id int) error {
 }
 
 func commentPR(org, repo string, id int) {
-
+	logrus.Print("test")
 }
 
 func mergeCommit() error {
 	return nil
 }
 
-func setRepoSubTrue(ghDetails *fs.GitHub) {
-	// TODO: implement black-listed repos.
+// SetRepoSubTrue subscribes to all the repositories in a GitHub organization.
+// TODO: implement black-listed repos.
+func SetRepoSubTrue(ghDetails *GitHub) {
 	ctx := context.Background()
 	client := ghDetails.Client
 	//user := ghDetails.User.GetLogin()
@@ -129,4 +144,8 @@ func setRepoSubTrue(ghDetails *fs.GitHub) {
 			logrus.Debugf("Subscribed to repository: %s", sub.GetRepositoryURL())
 		}
 	}
+}
+
+func addLabels() error {
+	return nil
 }

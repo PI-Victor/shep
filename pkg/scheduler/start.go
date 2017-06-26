@@ -5,7 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/PI-Victor/shep/pkg/fs"
+	"github.com/PI-Victor/shep/pkg/services"
 )
 
 // Scheduler is the general service
@@ -18,16 +18,14 @@ func NewScheduler() *Scheduler {
 }
 
 // Start starts the bot service.
-func (s *Scheduler) Start(cfg *fs.Config) error {
+func (s *Scheduler) Start(cfg *services.Config) error {
 	logrus.Info("Starting Shep... ")
-	if err := NewGitHubClient(cfg); err != nil {
+	if err := services.NewGitHubClient(cfg); err != nil {
 		return err
 	}
-	go func() {
-		setRepoSubTrue(cfg.GitHub)
-	}()
+	go services.SetRepoSubTrue(cfg.GitHub)
 	for {
-		if err := WatchRepos(cfg.GitHub); err != nil {
+		if err := services.WatchRepos(cfg.GitHub); err != nil {
 			return err
 		}
 		logrus.Debug("Sleeping...")

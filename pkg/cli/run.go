@@ -5,8 +5,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/PI-Victor/shep/pkg/fs"
 	"github.com/PI-Victor/shep/pkg/scheduler"
+	"github.com/PI-Victor/shep/pkg/services"
 )
 
 var (
@@ -25,11 +25,11 @@ shep start - Starts the application.
 		if err := viper.ReadInConfig(); err != nil {
 			logrus.Fatalf("Failed to read config: %s", err)
 		}
-		newCfg := fs.NewCfg()
+		newCfg := services.NewCfg()
 		if err := viper.Unmarshal(newCfg); err != nil {
 			logrus.Fatalf("An error occured while reading the config: %s", err)
 		}
-		if err := fs.ValidateCfg(newCfg); err != nil {
+		if err := services.ValidateCfg(newCfg); err != nil {
 			logrus.Fatalf("An error occured while validating the config: %s", err)
 		}
 		newScheduler := scheduler.NewScheduler()
@@ -48,7 +48,7 @@ Create a default configuration file for the application in the current working
 directory.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := fs.CreateDefaultCfg(); err != nil {
+		if err := services.CreateDefaultCfg(); err != nil {
 			logrus.Fatalf("An error occured while generating a default config: %s", err)
 		}
 	},

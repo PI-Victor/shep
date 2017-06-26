@@ -1,4 +1,3 @@
-BUILD_AS_USER=$(shell grep -i "$(USER)" /etc/passwd | cut -d: -f3)
 compile:
 	@echo "Removing previously built binaries"
 	@rm -rf _output/bin || true
