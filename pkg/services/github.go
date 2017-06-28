@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	_ "fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -96,7 +95,7 @@ func WatchRepos(ctx context.Context, ghDetails *GitHub) error {
 		}
 		for _, comment := range comments {
 			if lastCheck.Before(comment.GetCreatedAt()) {
-				if err := checkComment(ctx, comment.GetBody(), prDetails); err != nil {
+				if err := checkComment(ctx, ghDetails, comment.GetBody(), prDetails); err != nil {
 					logrus.Warningf("failed to apply action %s", err)
 				}
 			}
@@ -107,7 +106,7 @@ func WatchRepos(ctx context.Context, ghDetails *GitHub) error {
 	return nil
 }
 
-func checkComment(ctx context.Context, body string, pr *prDetails) error {
+func checkComment(ctx context.Context, githubDetails *GitHub, body string, pr *prDetails) error {
 	// TODO: replace with proper regexp, maybe have a list of keywords to look
 	// for.
 	match, err := regexp.Match("[[a-zA-Z]+]", []byte(body))
@@ -117,12 +116,12 @@ func checkComment(ctx context.Context, body string, pr *prDetails) error {
 	if match {
 		comm := strings.Trim(body, "[]")
 		if comm == "test" {
-			if err := commentPR(ctx, pr); err != nil {
+			if err := commentPR(ctx, githubDetails, pr); err != nil {
 				return err
 			}
 		}
 		if comm == "merge" {
-			if err := mergeCommit(ctx, pr); err != nil {
+			if err := mergeCommit(ctx, githubDetails, pr); err != nil {
 				return err
 			}
 		}
@@ -130,13 +129,25 @@ func checkComment(ctx context.Context, body string, pr *prDetails) error {
 	return nil
 }
 
-func commentPR(ctx context.Context, pr *prDetails) error {
-
+func commentPR(ctx context.Context, githubDetails *GitHub, pr *prDetails) error {
+	logrus.Println("Testing PR...")
+	commentBody := "Testing URL [To be filled in - CI/CD URL]"
+	comm := github.IssueComment{
+		Body: &commentBody,
+	}
+	_, _, err := githubDetails.Client.Issues.CreateComment(ctx, pr.org, pr.repo, pr.id, &comm)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func mergeCommit(ctx context.Context, pr *prDetails) error {
+func mergeCommit(ctx context.Context, githubDetails *GitHub, pr *prDetails) error {
 	logrus.Print("Merging PR...")
+	_, _, err := githubDetails.Client.PullRequests.Merge(ctx, pr.org, pr.repo, pr.id, "Merge based on [URL of PR to be filled in]", nil)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
