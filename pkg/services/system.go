@@ -21,7 +21,7 @@ type Config struct {
 
 	Travis Travis `json:"travis,omitempty"`
 
-	Labels []Label `json:"labels"`
+	Labels []Label `json:"labels,omitempty"`
 }
 
 // Label holds information about a label that the bot will add to github to tag
@@ -29,6 +29,7 @@ type Config struct {
 type Label struct {
 	Name     string `json:"name,omitempty"`
 	Severity int    `json:"severity,omitempty"`
+	hexColor string `json:"hexColor,omitempty"`
 }
 
 // NewCfg returns a new empty config instance.

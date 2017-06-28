@@ -33,6 +33,7 @@ type prDetails struct {
 	org  string
 	repo string
 	id   int
+	ref  string
 }
 
 func newPRDetails(notification *github.Notification) (*prDetails, error) {
@@ -148,6 +149,20 @@ func mergeCommit(ctx context.Context, githubDetails *GitHub, pr *prDetails) erro
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func deleteBranch(ctx context.Context, githubDetails *GitHub, pr *prDetails) error {
+	// this will act as a hook, so we don't have to test if the PR was merged or
+	// not.
+	_, err := githubDetails.Client.Git.DeleteRef(ctx, pr.org, pr.repo, pr.ref)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func closePullRequest(ctx context.Context, githubDetails *GitHub, pr *prDetails) error {
 	return nil
 }
 
