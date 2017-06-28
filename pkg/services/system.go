@@ -13,13 +13,22 @@ import (
 type Config struct {
 	DebugLevel logrus.Level `json:"debugLevel"`
 
-	IRCServers []IRCSettings `json:"ircServers"`
+	IRCServers []IRCSettings `json:"ircServers,omitempty"`
 
-	GitHub *GitHub `json:"gitHub"`
+	GitHub *GitHub `json:"gitHub,omitempty"`
 
-	JenkinsServers []JenkinsSettings `json:"jenkinsServers, omitempty"`
+	JenkinsServers []JenkinsSettings `json:"jenkinsServers,omitempty"`
 
-	Travis Travis `json:"travis"`
+	Travis Travis `json:"travis,omitempty"`
+
+	Labels []Label `json:"labels"`
+}
+
+// Label holds information about a label that the bot will add to github to tag
+// PRs and issues.
+type Label struct {
+	Name     string `json:"name,omitempty"`
+	Severity int    `json:"severity,omitempty"`
 }
 
 // NewCfg returns a new empty config instance.
@@ -32,6 +41,18 @@ func NewCfg() *Config {
 func newDefaultCfg() *Config {
 	return &Config{
 		DebugLevel: logrus.InfoLevel,
+		Labels: []Label{
+			{
+				Name:     "P1",
+				Severity: 1,
+			}, {
+				Name:     "P2",
+				Severity: 2,
+			}, {
+				Name:     "P3",
+				Severity: 3,
+			},
+		},
 	}
 }
 

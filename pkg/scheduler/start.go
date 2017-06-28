@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"context"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -20,12 +21,13 @@ func NewScheduler() *Scheduler {
 // Start starts the bot service.
 func (s *Scheduler) Start(cfg *services.Config) error {
 	logrus.Info("Starting Shep... ")
-	if err := services.NewGitHubClient(cfg); err != nil {
+	ctx := context.Background()
+	if err := services.NewGitHubClient(ctx, cfg); err != nil {
 		return err
 	}
-	go services.SetRepoSubTrue(cfg.GitHub)
+	go services.SetRepoSubTrue(ctx, cfg.GitHub)
 	for {
-		if err := services.WatchRepos(cfg.GitHub); err != nil {
+		if err := services.WatchRepos(ctx, cfg.GitHub); err != nil {
 			return err
 		}
 		logrus.Debug("Sleeping...")

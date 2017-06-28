@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"fmt"
+	_ "fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,6 +14,8 @@ import (
 )
 
 var (
+	// lastCheck keeps the time that we checked for new notifications. if the
+	// comment of the PR is older than lastCheck, we skip it.
 	lastCheck time.Time
 )
 
@@ -28,9 +30,33 @@ type GitHub struct {
 	Client *github.Client `json:"-"`
 }
 
+type prDetails struct {
+	org  string
+	repo string
+	id   int
+}
+
+func newPRDetails(notification *github.Notification) (*prDetails, error) {
+	// TODO: replace this with a proper group regexp.
+	urlParts := strings.Split(*notification.Subject.URL, "/")
+	repository := notification.Repository.GetName()
+	// It's safe to assume that, since the API is standard these indexes will
+	// always extract the correct data.
+	organisation := urlParts[4]
+	lastIndex, err := strconv.Atoi(urlParts[7])
+	if err != nil {
+		return nil, err
+	}
+
+	return &prDetails{
+		org:  organisation,
+		repo: repository,
+		id:   int(lastIndex),
+	}, nil
+}
+
 // NewGitHubClient returns a valid instance of a new GitHub client.
-func NewGitHubClient(cfg *Config) error {
-	ctx := context.Background()
+func NewGitHubClient(ctx context.Context, cfg *Config) error {
 	tokenSrc := oauth2.StaticTokenSource(
 		&oauth2.Token{
 			AccessToken: cfg.GitHub.Token,
@@ -50,10 +76,7 @@ func NewGitHubClient(cfg *Config) error {
 
 // WatchRepos watches the repositories in the organization that the bot is part
 // of for events such as comments or PRs.
-func WatchRepos(ghDetails *GitHub) error {
-	// NOTE: i don't think i should use context.Background like this, need to look
-	// into it.
-	ctx := context.Background()
+func WatchRepos(ctx context.Context, ghDetails *GitHub) error {
 	client := ghDetails.Client
 	opt := &github.NotificationListOptions{All: true}
 
@@ -62,35 +85,29 @@ func WatchRepos(ghDetails *GitHub) error {
 		return err
 	}
 	for _, notification := range notifications {
-		// TODO: replace this with a proper group regexp.
-		parts := strings.Split(*notification.Subject.URL, "/")
-		repo := notification.Repository.GetName()
-		last := parts[len(parts)-1]
-		org := parts[len(parts)-4]
-		id, err := strconv.Atoi(last)
-		id = int(id)
-		fmt.Printf("Current notification URL: %s\n", *notification.Subject.URL)
+		prDetails, err := newPRDetails(notification)
 		if err != nil {
 			return err
 		}
-		comments, _, err := client.Issues.ListComments(ctx, org, repo, id, nil)
+		comments, _, err := client.Issues.ListComments(ctx, prDetails.org, prDetails.repo, prDetails.id, nil)
 		if err != nil {
 			logrus.Warning(err)
 			continue
 		}
 		for _, comment := range comments {
 			if lastCheck.Before(comment.GetCreatedAt()) {
-				if err := checkComment(comment.GetBody(), org, repo, id); err != nil {
+				if err := checkComment(ctx, comment.GetBody(), prDetails); err != nil {
 					logrus.Warningf("failed to apply action %s", err)
 				}
 			}
 		}
 	}
+	// TODO: this is not really needed or used.
 	lastCheck = time.Now()
 	return nil
 }
 
-func checkComment(body string, org, repo string, id int) error {
+func checkComment(ctx context.Context, body string, pr *prDetails) error {
 	// TODO: replace with proper regexp, maybe have a list of keywords to look
 	// for.
 	match, err := regexp.Match("[[a-zA-Z]+]", []byte(body))
@@ -100,24 +117,32 @@ func checkComment(body string, org, repo string, id int) error {
 	if match {
 		comm := strings.Trim(body, "[]")
 		if comm == "test" {
-			commentPR(org, repo, id)
+			if err := commentPR(ctx, pr); err != nil {
+				return err
+			}
+		}
+		if comm == "merge" {
+			if err := mergeCommit(ctx, pr); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func commentPR(org, repo string, id int) {
-	logrus.Print("test")
+func commentPR(ctx context.Context, pr *prDetails) error {
+
+	return nil
 }
 
-func mergeCommit() error {
+func mergeCommit(ctx context.Context, pr *prDetails) error {
+	logrus.Print("Merging PR...")
 	return nil
 }
 
 // SetRepoSubTrue subscribes to all the repositories in a GitHub organization.
 // TODO: implement black-listed repos.
-func SetRepoSubTrue(ghDetails *GitHub) {
-	ctx := context.Background()
+func SetRepoSubTrue(ctx context.Context, ghDetails *GitHub) {
 	client := ghDetails.Client
 	//user := ghDetails.User.GetLogin()
 	subed := true
@@ -146,6 +171,6 @@ func SetRepoSubTrue(ghDetails *GitHub) {
 	}
 }
 
-func addLabels() error {
+func addLabels(ctx context.Context, ghDetails *GitHub) error {
 	return nil
 }
