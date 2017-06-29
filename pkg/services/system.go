@@ -29,7 +29,7 @@ type Config struct {
 type Label struct {
 	Name     string `json:"name,omitempty"`
 	Severity int    `json:"severity,omitempty"`
-	hexColor string `json:"hexColor,omitempty"`
+	HexColor string `json:"hexColor,omitempty"`
 }
 
 // NewCfg returns a new empty config instance.
@@ -52,6 +52,12 @@ func newDefaultCfg() *Config {
 			}, {
 				Name:     "P3",
 				Severity: 3,
+			}, {
+				Name:     "Needs-Rebase",
+				Severity: 0,
+			}, {
+				Name:     "Needs-Labeling",
+				Severity: 0,
 			},
 		},
 	}
