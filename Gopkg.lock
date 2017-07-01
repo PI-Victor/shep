@@ -2,16 +2,16 @@
 
 
 [[projects]]
-  name = "github.com/sirupsen/logrus"
-  packages = ["."]
-  revision = "202f25545ea4cf9b191ff7f846df5d87c9382c2b"
-  version = "v1.0.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/adlio/trello"
   packages = ["."]
   revision = "4e1eeacb4c696dcc25f58762216b3ec5ac1e91fe"
+
+[[projects]]
+  name = "github.com/bndr/gojenkins"
+  packages = ["."]
+  revision = "668c6a1cb16b659ece2e90506e643ea16abc712c"
+  version = "v1.0"
 
 [[projects]]
   name = "github.com/fsnotify/fsnotify"
@@ -160,6 +160,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d59b7dc7cd54d602717532b00ad8d33668c50135d27ea60eb4bce67f7c94287a"
+  inputs-digest = "ea57483f3d9d398a8b9ab156d670a58823f3faaf13e753165015d776732522c2"
   solver-name = "gps-cdcl"
   solver-version = 1
