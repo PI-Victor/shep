@@ -11,7 +11,7 @@ import (
 )
 
 const asciiChar = `
-_____ _    _ ______ _____
+ _____ _    _ ______ _____
 / ____| |  | |  ____|  __ \
 | (___| |__| | |__  | |__)|
 \___ \|  __  |  __| |  ___/
@@ -21,8 +21,11 @@ ____) | |  | | |____| |
 
 var (
 	rootCmd = &cobra.Command{
-		Use:     "shep",
-		Example: fmt.Sprintf("\n%s\nshep - A versatile automation bot for VCS systems that runs tests against various CI/CD servers.", asciiChar),
+		Use: "shep",
+		Example: fmt.Sprintf(`
+%s
+shep - A versatile automation bot for VCS systems that runs tests against various CI/CD servers.
+`, asciiChar),
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},
