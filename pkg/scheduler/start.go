@@ -2,11 +2,30 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/PI-Victor/shep/pkg/services"
+)
+
+var (
+	vers       = "v0.1"
+	author     = "Victor Palade"
+	URL        = "https://github.com/PI-Victor/shep"
+	welcomeMsg = fmt.Sprintf(`
+ _____ _    _ ______ _____
+/ ____| |  | |  ____|  __ \       Automation Bot for VCS systems
+| (___| |__| | |__  | |__)|                  %s
+\___ \|  __  |  __| |  ___/             by %s
+____) | |  | | |____| |          %s
+|____/|_|  |_|______|_|
+`,
+		vers,
+		author,
+		URL,
+	)
 )
 
 // Scheduler is the general service
@@ -20,7 +39,7 @@ func NewScheduler() *Scheduler {
 
 // Start starts the bot service.
 func (s *Scheduler) Start(cfg *services.Config) error {
-	logrus.Info("Starting Shep... ")
+	logrus.Infof("Starting... \n%s \n", welcomeMsg)
 	ctx := context.Background()
 	if err := services.NewGitHubClient(ctx, cfg); err != nil {
 		return err
