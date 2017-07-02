@@ -17,9 +17,9 @@ type Config struct {
 
 	GitHub *GitHub `json:"gitHub,omitempty"`
 
-	JenkinsServers []JenkinsSettings `json:"jenkinsServers,omitempty"`
+	Jenkins *Jenkins `json:"jenkins,omitempty"`
 
-	Travis Travis `json:"travis,omitempty"`
+	Travis *Travis `json:"travis,omitempty"`
 
 	Labels []Label `json:"labels,omitempty"`
 }

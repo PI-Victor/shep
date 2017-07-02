@@ -12,6 +12,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// TODO: this code needs to use DI. since it's not testable at all.
+// isolating component deps would make this easy to test.
+
 var (
 	// lastCheck keeps the time that we checked for new notifications. if the
 	// comment of the PR is older than lastCheck, we skip it.
@@ -20,8 +23,8 @@ var (
 
 // GitHub holds specific information that is used for GitHub integration.
 type GitHub struct {
-	User  github.User `json:"-"`
-	Token string      `json:"token"`
+	User  *github.User `json:"-"`
+	Token string       `json:"token"`
 
 	// A list of URLs that the bot can ignore.
 	IgnoreRepos []string `json:"ignoreRepos,omitempty"`
@@ -88,7 +91,7 @@ func NewGitHubClient(ctx context.Context, cfg *Config) error {
 		return err
 	}
 
-	cfg.GitHub.User = *authClient
+	cfg.GitHub.User = authClient
 	return nil
 }
 
@@ -182,6 +185,7 @@ func mergePR(ctx context.Context, githubDetails *GitHub, pr *prDetails) error {
 	return nil
 }
 
+// NOTE: is it a bad idea to delete branches that were used to merge a PR?
 func deleteBranch(ctx context.Context, githubDetails *GitHub, pr *prDetails) error {
 	logrus.Debugf("the pr is merged: %#v", pr)
 	if !pr.isMaster && pr.merged {
