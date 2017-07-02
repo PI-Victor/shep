@@ -42,7 +42,11 @@ type prDetails struct {
 	id       int
 }
 
-func newPRDetails(ctx context.Context, client *github.Client, notification *github.Notification) (*prDetails, error) {
+func newPRDetails(
+	ctx context.Context,
+	client *github.Client,
+	notification *github.Notification,
+) (*prDetails, error) {
 	// TODO: replace this with a proper group regexp.
 	var (
 		urlParts       = strings.Split(*notification.Subject.URL, "/")
@@ -110,7 +114,13 @@ func WatchRepos(ctx context.Context, ghDetails *GitHub) error {
 		if err != nil {
 			return err
 		}
-		comments, _, err := client.Issues.ListComments(ctx, prDetails.owner, prDetails.repo, prDetails.id, nil)
+		comments, _, err := client.Issues.ListComments(
+			ctx,
+			prDetails.owner,
+			prDetails.repo,
+			prDetails.id,
+			nil,
+		)
 		if err != nil {
 			logrus.Warning(err)
 			continue
@@ -173,7 +183,11 @@ func mergePR(ctx context.Context, githubDetails *GitHub, pr *prDetails) error {
 	if !isMerged {
 		// NOTE: this could be tricky if the response of the action is different
 		// than successful. i don't expect an err everytime.
-		_, _, err := githubDetails.Client.PullRequests.Merge(ctx, pr.owner, pr.repo, pr.id, "Merge based on [URL of PR to be filled in]", nil)
+		_, _, err := githubDetails.Client.PullRequests.Merge(
+			ctx, pr.owner, pr.repo, pr.id,
+			"Merge based on [URL of PR to be filled in]",
+			nil,
+		)
 		if err != nil {
 			return err
 		}
@@ -190,7 +204,9 @@ func deleteBranch(ctx context.Context, githubDetails *GitHub, pr *prDetails) err
 	logrus.Debugf("the pr is merged: %#v", pr)
 	if !pr.isMaster && pr.merged {
 		logrus.Debugf("The pr ref in deleteBranch is :%s", pr.branch)
-		_, err := githubDetails.Client.Git.DeleteRef(ctx, pr.owner, pr.repo, strings.Replace("heads/"+pr.branch, "#", "%23", -1))
+		_, err := githubDetails.Client.Git.DeleteRef(ctx, pr.owner, pr.repo,
+			strings.Replace("heads/"+pr.branch, "#", "%23", -1),
+		)
 		if err != nil {
 			return err
 		}
@@ -200,7 +216,12 @@ func deleteBranch(ctx context.Context, githubDetails *GitHub, pr *prDetails) err
 
 func closePullRequest(ctx context.Context, githubDetails *GitHub, pr *prDetails) error {
 	logrus.Debug("Closing PR...")
-	_, err := githubDetails.Client.Activity.MarkRepositoryNotificationsRead(ctx, pr.owner, pr.repo, time.Now())
+	_, err := githubDetails.Client.Activity.MarkRepositoryNotificationsRead(
+		ctx,
+		pr.owner,
+		pr.repo,
+		time.Now(),
+	)
 	if err != nil {
 		return err
 	}
@@ -228,7 +249,12 @@ func SetRepoSubTrue(ctx context.Context, ghDetails *GitHub) {
 			logrus.Warnf("Failed to get organization repos: %s", err)
 		}
 		for _, repo := range repos {
-			sub, _, err := client.Activity.SetRepositorySubscription(ctx, org.GetLogin(), repo.GetName(), &subscription)
+			sub, _, err := client.Activity.SetRepositorySubscription(
+				ctx,
+				org.GetLogin(),
+				repo.GetName(),
+				&subscription,
+			)
 			if err != nil {
 				logrus.Warnf("Failed to subscribe to repository: %s (%s)", repo, err)
 				continue
