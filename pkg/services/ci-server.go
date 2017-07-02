@@ -9,6 +9,5 @@ type CIServer interface {
 
 type CIJobs interface {
 	Start() error
-	Restart() error
 	Cancel() error
 }
