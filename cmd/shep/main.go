@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -8,13 +10,24 @@ import (
 	"github.com/PI-Victor/shep/pkg/cli"
 )
 
-var rootCmd = &cobra.Command{
-	Use:     "shep",
-	Example: "shep - A versatile GitHub bot that runs tests against various CI/CD servers.",
-	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
-	},
-}
+const asciiChar = `
+_____ _    _ ______ _____
+/ ____| |  | |  ____|  __ \
+| (___| |__| | |__  | |__)|
+\___ \|  __  |  __| |  ___/
+____) | |  | | |____| |
+|____/|_|  |_|______|_|
+`
+
+var (
+	rootCmd = &cobra.Command{
+		Use:     "shep",
+		Example: fmt.Sprintf("\n%s\nshep - A versatile automation bot for VCS systems that runs tests against various CI/CD servers.", asciiChar),
+		Run: func(cmd *cobra.Command, args []string) {
+			cmd.Help()
+		},
+	}
+)
 
 func main() {
 	rootCmd.AddCommand(

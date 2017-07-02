@@ -1,5 +1,11 @@
-### Shep
-[![CircleCI](https://circleci.com/gh/PI-Victor/shep/tree/master.svg?style=svg)](https://circleci.com/gh/PI-Victor/shep/tree/master) [![Coverage Status](https://coveralls.io/repos/github/PI-Victor/shep/badge.svg?branch=master)](https://coveralls.io/github/PI-Victor/shep?branch=master)
+```
+ _____ _    _ ______ _____
+/ ____| |  | |  ____|  __ \    GitHub, GitLab,
+| (___| |__| | |__  | |__)|    Trello,
+\___ \|  __  |  __| |  ___/    Jenkins, Travis,
+____) | |  | | |____| |        IRC, Slack.
+|____/|_|  |_|______|_|
+```
 
 Shep is an automation bot that handles running tests and merging pull requests
 on GitHub.  
