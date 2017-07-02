@@ -13,9 +13,11 @@ import (
 type Config struct {
 	DebugLevel logrus.Level `json:"debugLevel"`
 
+	Timer int64 `json:"timer"`
+
 	IRCServers []IRCSettings `json:"ircServers,omitempty"`
 
-	GitHub *GitHub `json:"gitHub,omitempty"`
+	GitHub *GitHub `json:"github"`
 
 	Jenkins *Jenkins `json:"jenkins,omitempty"`
 
@@ -42,6 +44,7 @@ func NewCfg() *Config {
 func newDefaultCfg() *Config {
 	return &Config{
 		DebugLevel: logrus.InfoLevel,
+		Timer:      45,
 		Labels: []Label{
 			{
 				Name:     "P1",

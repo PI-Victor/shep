@@ -3,6 +3,9 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -40,16 +43,38 @@ func NewScheduler() *Scheduler {
 // Start starts the bot service.
 func (s *Scheduler) Start(cfg *services.Config) error {
 	logrus.Infof("Starting... \n%s \n", welcomeMsg)
-	ctx := context.Background()
+	var (
+		ticker = time.Ticker{}
+		ctx    = context.Background()
+		c      = make(chan os.Signal, 1)
+	)
+	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGTERM)
+	go func() {
+		for sig := range c {
+			ticker.Stop()
+			logrus.Infof("Received %s, exiting.", sig.String())
+			os.Exit(0)
+		}
+	}()
+
+	// TODO: abstract away the listeners (github, gitlab, etc).
 	if err := services.NewGitHubClient(ctx, cfg); err != nil {
 		return err
 	}
+	// TODO: move this away from service start as well.
 	go services.SetRepoSubTrue(ctx, cfg.GitHub)
-	for {
+	if cfg.Timer < 45 {
+		return fmt.Errorf("expected interval to be greater than 45s, got %ds", cfg.Timer)
+	}
+	t := (time.Duration(cfg.Timer) * time.Second)
+	duration := time.NewTicker(t)
+
+	for range duration.C {
 		if err := services.WatchRepos(ctx, cfg.GitHub); err != nil {
 			return err
 		}
-		logrus.Debug("Sleeping...")
-		time.Sleep(10 * time.Second)
+		logrus.Debugf("Sleeping... %s", time.Now())
 	}
+	return nil
 }
