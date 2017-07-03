@@ -1,10 +1,8 @@
-/*
- _____ _    _ ______ _____
-/ ____| |  | |  ____|  __ \
-| (___| |__| | |__  | |__)|
-\___ \|  __  |  __| |  ___/
-____) | |  | | |____| |
-|____/|_|  |_|______|_|
+/*Package shep is a VCS systems automation bot that runs tests against various
+CI/CD systems such as: Jenkins, Concourse and Travis.
+Shep recognizes commands issued via GitHub comments and can track test jobs
+throughout the CI/CD that you use.
+It can also add GitHub integration to Trello cards and link and track Bugzilla
+issues.
 */
-// shep is a VCS systems automation bot that runs tests against various CI/CD.
 package shep
