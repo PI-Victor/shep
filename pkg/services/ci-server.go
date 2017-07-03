@@ -7,6 +7,8 @@ type CIServer interface {
 	Stop() error
 }
 
+// CIJobs is an interface used for abstracting Jobs in a CI/CD server
+// environment.
 type CIJobs interface {
 	Start() error
 	Cancel() error
