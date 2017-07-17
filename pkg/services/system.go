@@ -56,10 +56,10 @@ func newDefaultCfg() *Config {
 				Name:     "P3",
 				Severity: 3,
 			}, {
-				Name:     "Needs-Rebase",
+				Name:     "Needs Rebase",
 				Severity: 0,
 			}, {
-				Name:     "Needs-Labeling",
+				Name:     "Needs Labeling",
 				Severity: 0,
 			},
 		},

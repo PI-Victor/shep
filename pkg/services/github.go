@@ -128,7 +128,7 @@ func WatchRepos(ctx context.Context, ghDetails *GitHub) error {
 		for _, comment := range comments {
 			if lastCheck.Before(comment.GetCreatedAt()) {
 				if err := checkComment(ctx, ghDetails, comment.GetBody(), prDetails); err != nil {
-					logrus.Warningf("failed to apply action %s", err)
+					logrus.Warningf("Failed to apply action %s", err)
 				}
 			}
 		}
