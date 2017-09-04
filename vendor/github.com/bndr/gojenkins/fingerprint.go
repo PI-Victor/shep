@@ -15,8 +15,8 @@
 package gojenkins
 
 import (
-	"errors"
 	"fmt"
+	"errors"
 )
 
 type Fingerprint struct {
@@ -87,9 +87,9 @@ func (f Fingerprint) GetInfo() (*fingerPrintResponse, error) {
 }
 
 func (f Fingerprint) Poll() (int, error) {
-	response, err := f.Jenkins.Requester.GetJSON(f.Base+f.Id, f.Raw, nil)
+	_, err := f.Jenkins.Requester.GetJSON(f.Base+f.Id, f.Raw, nil)
 	if err != nil {
 		return 0, err
 	}
-	return response.StatusCode, nil
+	return f.Jenkins.Requester.LastResponse.StatusCode, nil
 }

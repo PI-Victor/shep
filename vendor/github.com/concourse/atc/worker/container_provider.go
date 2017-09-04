@@ -104,7 +104,6 @@ type ContainerProvider interface {
 	FindOrCreateContainer(
 		logger lager.Logger,
 		cancel <-chan os.Signal,
-		resourceUser db.ResourceUser,
 		owner db.ContainerOwner,
 		delegate ImageFetchingDelegate,
 		metadata db.ContainerMetadata,
@@ -137,7 +136,6 @@ type containerProvider struct {
 func (p *containerProvider) FindOrCreateContainer(
 	logger lager.Logger,
 	cancel <-chan os.Signal,
-	resourceUser db.ResourceUser,
 	owner db.ContainerOwner,
 	delegate ImageFetchingDelegate,
 	metadata db.ContainerMetadata,
@@ -198,7 +196,6 @@ func (p *containerProvider) FindOrCreateContainer(
 				spec.ImageSpec,
 				spec.TeamID,
 				delegate,
-				resourceUser,
 				resourceTypes,
 			)
 			if err != nil {
@@ -263,6 +260,9 @@ func (p *containerProvider) FindOrCreateContainer(
 		createdContainer, err = creatingContainer.Created()
 		if err != nil {
 			logger.Error("failed-to-mark-container-as-created", err)
+
+			_ = p.gardenClient.Destroy(creatingContainer.Handle())
+
 			return nil, err
 		}
 

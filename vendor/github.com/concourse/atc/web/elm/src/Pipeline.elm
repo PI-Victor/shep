@@ -21,6 +21,13 @@ import Routes
 import LoginRedirect
 import RemoteData exposing (..)
 import UpdateMsg exposing (UpdateMsg)
+import Keyboard
+import Mouse
+import Char
+
+
+port resetPipelineFocus : () -> Cmd msg
+
 
 type alias Ports =
     { render : ( Json.Encode.Value, Json.Encode.Value ) -> Cmd Msg
@@ -40,6 +47,8 @@ type alias Model =
     , turbulenceImgSrc : String
     , experiencingTurbulence : Bool
     , selectedGroups : List String
+    , hideLegend : Bool
+    , hideLegendCounter : Time
     }
 
 
@@ -55,11 +64,15 @@ type Msg
     = Noop
     | AutoupdateVersionTicked Time
     | AutoupdateTimerTicked Time
+    | HideLegendTimerTicked Time
+    | ShowLegend
+    | KeyPressed Keyboard.KeyCode
     | PipelineIdentifierFetched Concourse.PipelineIdentifier
     | JobsFetched (Result Http.Error Json.Encode.Value)
     | ResourcesFetched (Result Http.Error Json.Encode.Value)
     | VersionFetched (Result Http.Error String)
     | PipelineFetched (Result Http.Error Concourse.Pipeline)
+
 
 queryGroupsForRoute : Routes.ConcourseRoute -> List String
 queryGroupsForRoute route =
@@ -86,6 +99,8 @@ init ports flags =
             , renderedResources = Nothing
             , experiencingTurbulence = False
             , selectedGroups = queryGroupsForRoute flags.route
+            , hideLegend = False
+            , hideLegendCounter = 0
             }
     in
         loadPipeline pipelineLocator model
@@ -114,26 +129,65 @@ loadPipeline pipelineLocator model =
         [ fetchPipeline pipelineLocator
         , fetchVersion
         , model.ports.title <| model.pipelineLocator.pipelineName ++ " - "
+        , resetPipelineFocus ()
         ]
     )
 
-updateWithMessage : Msg -> Model -> (Model, Cmd Msg, Maybe UpdateMsg)
+
+updateWithMessage : Msg -> Model -> ( Model, Cmd Msg, Maybe UpdateMsg )
 updateWithMessage message model =
     let
-        (mdl, msg) = update message model
+        ( mdl, msg ) =
+            update message model
     in
         case mdl.pipeline of
             RemoteData.Failure _ ->
-                (mdl, msg, Just UpdateMsg.NotFound)
+                ( mdl, msg, Just UpdateMsg.NotFound )
+
             _ ->
-                (mdl, msg, Nothing)
+                ( mdl, msg, Nothing )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg)
+timeUntilHidden : Time
+timeUntilHidden =
+    10 * Time.second
+
+
+timeUntilHiddenCheckInterval : Time
+timeUntilHiddenCheckInterval =
+    1 * Time.second
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Noop ->
             ( model, Cmd.none )
+
+        HideLegendTimerTicked _ ->
+            if model.hideLegendCounter + timeUntilHiddenCheckInterval > timeUntilHidden then
+                ( { model | hideLegend = True }
+                , Cmd.none
+                )
+            else
+                ( { model | hideLegendCounter = model.hideLegendCounter + timeUntilHiddenCheckInterval }
+                , Cmd.none
+                )
+
+        ShowLegend ->
+            ( { model | hideLegend = False, hideLegendCounter = 0 }
+            , Cmd.none
+            )
+
+        KeyPressed keycode ->
+            if (Char.fromCode keycode |> Char.toLower) == 'f' then
+                ( model
+                , resetPipelineFocus ()
+                )
+            else
+                ( model
+                , Cmd.none
+                )
 
         AutoupdateTimerTicked timestamp ->
             ( model
@@ -160,7 +214,7 @@ update msg model =
                     if status.code == 401 then
                         ( model, LoginRedirect.requestLoginRedirect "" )
                     else if status.code == 404 then
-                         ( {model | pipeline = RemoteData.Failure err}, Cmd.none)
+                        ( { model | pipeline = RemoteData.Failure err }, Cmd.none )
                     else
                         ( model, Cmd.none )
 
@@ -188,7 +242,7 @@ update msg model =
             case err of
                 Http.BadStatus { status } ->
                     if status.code == 401 then
-                        ( model, LoginRedirect.requestLoginRedirect "")
+                        ( model, LoginRedirect.requestLoginRedirect "" )
                     else
                         ( model, Cmd.none )
 
@@ -208,6 +262,11 @@ subscriptions model =
     Sub.batch
         [ autoupdateVersionTimer
         , Time.every (5 * Time.second) AutoupdateTimerTicked
+        , Time.every (timeUntilHiddenCheckInterval) HideLegendTimerTicked
+        , Mouse.moves (\_ -> ShowLegend)
+        , Keyboard.presses (\_ -> ShowLegend)
+        , Mouse.clicks (\_ -> ShowLegend)
+        , Keyboard.presses KeyPressed
         ]
 
 
@@ -232,21 +291,26 @@ view model =
                 , Html.p [ class "explanation" ] []
                 ]
             ]
-        , Html.dl [ class "legend" ]
-            [ Html.dt [ class "pending" ] []
-            , Html.dd [] [ Html.text "pending" ]
-            , Html.dt [ class "started" ] []
-            , Html.dd [] [ Html.text "started" ]
-            , Html.dt [ class "succeeded" ] []
+        , Html.dl
+            [ if model.hideLegend then
+                class "legend hidden"
+              else
+                class "legend"
+            ]
+            [ Html.dt [ class "succeeded" ] []
             , Html.dd [] [ Html.text "succeeded" ]
-            , Html.dt [ class "failed" ] []
-            , Html.dd [] [ Html.text "failed" ]
             , Html.dt [ class "errored" ] []
             , Html.dd [] [ Html.text "errored" ]
             , Html.dt [ class "aborted" ] []
             , Html.dd [] [ Html.text "aborted" ]
             , Html.dt [ class "paused" ] []
             , Html.dd [] [ Html.text "paused" ]
+            , Html.dt [ class "failed" ] []
+            , Html.dd [] [ Html.text "failed" ]
+            , Html.dt [ class "pending" ] []
+            , Html.dd [] [ Html.text "pending" ]
+            , Html.dt [ class "started" ] []
+            , Html.dd [] [ Html.text "started" ]
             , Html.dt [ class "dotted" ] [ Html.text "." ]
             , Html.dd [] [ Html.text "dependency" ]
             , Html.dt [ class "solid" ] [ Html.text "-" ]
@@ -376,6 +440,7 @@ renderIfNeeded model =
 
         _ ->
             ( model, Cmd.none )
+
 
 fetchResources : Concourse.PipelineIdentifier -> Cmd Msg
 fetchResources pid =

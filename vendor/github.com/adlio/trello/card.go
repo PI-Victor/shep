@@ -28,6 +28,7 @@ type Card struct {
 	Url              string     `json:"url"`
 	Desc             string     `json:"desc"`
 	Due              *time.Time `json:"due"`
+	DueComplete      bool       `json:"dueComplete"`
 	Closed           bool       `json:"closed"`
 	Subscribed       bool       `json:"subscribed"`
 	DateLastActivity *time.Time `json:"dateLastActivity"`
@@ -85,6 +86,26 @@ func (c *Card) MoveToList(listID string, args Arguments) error {
 	path := fmt.Sprintf("cards/%s", c.ID)
 	args["idList"] = listID
 	return c.client.Put(path, args, &c)
+}
+
+func (c *Card) SetPos(newPos float64) error {
+	path := fmt.Sprintf("cards/%s", c.ID)
+	return c.client.Put(path, Arguments{"pos": fmt.Sprintf("%f", newPos)}, c)
+}
+
+func (c *Card) MoveToTopOfList() error {
+	path := fmt.Sprintf("cards/%s", c.ID)
+	return c.client.Put(path, Arguments{"pos": "top"}, c)
+}
+
+func (c *Card) MoveToBottomOfList() error {
+	path := fmt.Sprintf("cards/%s", c.ID)
+	return c.client.Put(path, Arguments{"pos": "bottom"}, c)
+}
+
+func (c *Card) Update(args Arguments) error {
+	path := fmt.Sprintf("cards/%s", c.ID)
+	return c.client.Put(path, args, c)
 }
 
 func (c *Client) CreateCard(card *Card, extraArgs Arguments) error {
@@ -176,7 +197,7 @@ func (c *Card) GetParentCard(args Arguments) (*Card, error) {
 
 	if action == nil {
 		// No luck. Go get copyCard actions for this card.
-		c.client.Logger.Debugf("Creation action wasn't supplied before GetParentCard() on '%s'. Getting copyCard actions.", c.ID)
+		c.client.log("Creation action wasn't supplied before GetParentCard() on '%s'. Getting copyCard actions.", c.ID)
 		actions, err := c.GetActions(Arguments{"filter": "copyCard"})
 		if err != nil {
 			err = errors.Wrapf(err, "GetParentCard() failed to GetActions() for card '%s'", c.ID)
@@ -198,7 +219,7 @@ func (c *Card) GetAncestorCards(args Arguments) (ancestors []*Card, err error) {
 	// Get the first parent
 	parent, err := c.GetParentCard(args)
 	if IsNotFound(err) || IsPermissionDenied(err) {
-		c.client.Logger.Debugf("Can't get details about the parent of card '%s' due to lack of permissions or card deleted.", c.ID)
+		c.client.log("[trello] Can't get details about the parent of card '%s' due to lack of permissions or card deleted.", c.ID)
 		return ancestors, nil
 	}
 
@@ -206,7 +227,7 @@ func (c *Card) GetAncestorCards(args Arguments) (ancestors []*Card, err error) {
 		ancestors = append(ancestors, parent)
 		parent, err = parent.GetParentCard(args)
 		if IsNotFound(err) || IsPermissionDenied(err) {
-			c.client.Logger.Debugf("Can't get details about the parent of card '%s' due to lack of permissions or card deleted.", c.ID)
+			c.client.log("[trello] Can't get details about the parent of card '%s' due to lack of permissions or card deleted.", c.ID)
 			return ancestors, nil
 		} else if err != nil {
 			return ancestors, err
@@ -253,7 +274,7 @@ func (c *Card) CreatorMemberID() (string, error) {
 	var err error
 
 	if len(c.Actions) == 0 {
-		c.client.Logger.Debugf("CreatorMemberID() called on card '%s' without any Card.Actions. Fetching fresh.", c.ID)
+		c.client.log("[trello] CreatorMemberID() called on card '%s' without any Card.Actions. Fetching fresh.", c.ID)
 		c.Actions, err = c.GetActions(Defaults())
 		if err != nil {
 			err = errors.Wrapf(err, "GetActions() call failed.")

@@ -65,6 +65,7 @@ import (
 	_ "github.com/concourse/atc/metric/emitter"
 
 	// dynamically registered credential managers
+	_ "github.com/concourse/atc/creds/credhub"
 	_ "github.com/concourse/atc/creds/vault"
 )
 
@@ -101,9 +102,10 @@ type ATCCommand struct {
 
 	SessionSigningKey FileFlag `long:"session-signing-key" description:"File containing an RSA private key, used to sign session tokens."`
 
-	ResourceCheckingInterval     time.Duration `long:"resource-checking-interval" default:"1m" description:"Interval on which to check for new versions of resources."`
-	OldResourceGracePeriod       time.Duration `long:"old-resource-grace-period" default:"5m" description:"How long to cache the result of a get step after a newer version of the resource is found."`
-	ResourceCacheCleanupInterval time.Duration `long:"resource-cache-cleanup-interval" default:"30s" description:"Interval on which to cleanup old caches of resources."`
+	ResourceCheckingInterval          time.Duration `long:"resource-checking-interval" default:"1m" description:"Interval on which to check for new versions of resources."`
+	OldResourceGracePeriod            time.Duration `long:"old-resource-grace-period" default:"5m" description:"How long to cache the result of a get step after a newer version of the resource is found."`
+	ResourceCacheCleanupInterval      time.Duration `long:"resource-cache-cleanup-interval" default:"30s" description:"Interval on which to cleanup old caches of resources."`
+	BaggageclaimResponseHeaderTimeout time.Duration `long:"baggageclaim-response-header-timeout" default:"1m" description:"How long to wait for Baggageclaim to send the response header."`
 
 	CLIArtifactsDir DirFlag `long:"cli-artifacts-dir" description:"Directory containing downloadable CLI binaries."`
 
@@ -131,9 +133,14 @@ type ATCCommand struct {
 
 	LogDBQueries bool `long:"log-db-queries" description:"Log database queries."`
 
-	GCInterval time.Duration `long:"gc-interval" default:"30s" description:"Interval on which to perform garbage collection."`
+	GC struct {
+		Interval          time.Duration `long:"interval" default:"30s" description:"Interval on which to perform garbage collection."`
+		WorkerConcurrency int           `long:"worker-concurrency" default:"50" description:"Maximum number of delete operations to have in flight per worker."`
+	} `group:"Garbage Collection" namespace:"gc"`
 
 	BuildTrackerInterval time.Duration `long:"build-tracker-interval" default:"10s" description:"Interval on which to run build tracking."`
+
+	TelemetryOptIn bool `long:"telemetry-opt-in" description:"Enable anonymous concourse version reporting."`
 }
 
 func (cmd *ATCCommand) WireDynamicFlags(commandFlags *flags.Command) {
@@ -220,7 +227,9 @@ func (cmd *ATCCommand) Runner(args []string) (ifrit.Runner, error) {
 
 	go metric.PeriodicallyEmit(logger.Session("periodic-metrics"), 10*time.Second)
 
-	cmd.configureMetrics(logger)
+	if err := cmd.configureMetrics(logger); err != nil {
+		return nil, err
+	}
 
 	connectionCountingDriverName := "connection-counting"
 	metric.SetupConnectionCountingDriver("postgres", cmd.Postgres.ConnectionString(), connectionCountingDriverName)
@@ -283,7 +292,9 @@ func (cmd *ATCCommand) Runner(args []string) (ifrit.Runner, error) {
 	dbWorkerLifecycle := db.NewWorkerLifecycle(dbConn)
 	resourceConfigCheckSessionLifecycle := db.NewResourceConfigCheckSessionLifecycle(dbConn)
 	dbResourceCacheFactory := db.NewResourceCacheFactory(dbConn)
+	dbResourceCacheLifecycle := db.NewResourceCacheLifecycle(dbConn)
 	dbResourceConfigFactory := db.NewResourceConfigFactory(dbConn, lockFactory)
+	dbResourceConfigCheckSessionFactory := db.NewResourceConfigCheckSessionFactory(dbConn, lockFactory)
 	dbWorkerBaseResourceTypeFactory := db.NewWorkerBaseResourceTypeFactory(dbConn)
 	dbWorkerTaskCacheFactory := db.NewWorkerTaskCacheFactory(dbConn)
 	resourceFetcherFactory := resource.NewFetcherFactory(lockFactory, clock.NewClock(), dbResourceCacheFactory)
@@ -300,6 +311,7 @@ func (cmd *ATCCommand) Runner(args []string) (ifrit.Runner, error) {
 		dbWorkerFactory,
 		teamFactory,
 		workerVersion,
+		cmd.BaggageclaimResponseHeaderTimeout,
 	)
 
 	resourceFetcher := resourceFetcherFactory.FetcherFor(workerClient)
@@ -308,14 +320,14 @@ func (cmd *ATCCommand) Runner(args []string) (ifrit.Runner, error) {
 
 	radarSchedulerFactory := pipelines.NewRadarSchedulerFactory(
 		resourceFactory,
-		dbResourceConfigFactory,
+		dbResourceConfigCheckSessionFactory,
 		cmd.ResourceCheckingInterval,
 		engine,
 	)
 
 	radarScannerFactory := radar.NewScannerFactory(
 		resourceFactory,
-		dbResourceConfigFactory,
+		dbResourceConfigCheckSessionFactory,
 		cmd.ResourceCheckingInterval,
 		cmd.ExternalURL.String(),
 		variablesFactory,
@@ -494,11 +506,7 @@ func (cmd *ATCCommand) Runner(args []string) (ifrit.Runner, error) {
 				),
 				gc.NewResourceCacheUseCollector(
 					logger.Session("resource-cache-use-collector"),
-					dbResourceCacheFactory,
-				),
-				gc.NewResourceConfigUseCollector(
-					logger.Session("resource-config-use-collector"),
-					dbResourceConfigFactory,
+					dbResourceCacheLifecycle,
 				),
 				gc.NewResourceConfigCollector(
 					logger.Session("resource-config-collector"),
@@ -506,19 +514,27 @@ func (cmd *ATCCommand) Runner(args []string) (ifrit.Runner, error) {
 				),
 				gc.NewResourceCacheCollector(
 					logger.Session("resource-cache-collector"),
-					dbResourceCacheFactory,
+					dbResourceCacheLifecycle,
 				),
 				gc.NewVolumeCollector(
 					logger.Session("volume-collector"),
 					dbVolumeFactory,
-					dbWorkerFactory,
-					gc.NewBaggageclaimClientFactory(dbWorkerFactory),
+					gc.NewWorkerJobRunner(
+						logger.Session("volume-collector-worker-job-runner"),
+						workerClient,
+						time.Minute,
+						cmd.GC.WorkerConcurrency,
+					),
 				),
 				gc.NewContainerCollector(
 					logger.Session("container-collector"),
 					dbContainerFactory,
-					dbWorkerFactory,
-					gc.NewGardenClientFactory(),
+					gc.NewWorkerJobRunner(
+						logger.Session("container-collector-worker-job-runner"),
+						workerClient,
+						time.Minute,
+						cmd.GC.WorkerConcurrency,
+					),
 				),
 				gc.NewResourceConfigCheckSessionCollector(
 					logger.Session("resource-config-check-session-collector"),
@@ -528,7 +544,7 @@ func (cmd *ATCCommand) Runner(args []string) (ifrit.Runner, error) {
 			"collector",
 			lockFactory,
 			clock.NewClock(),
-			cmd.GCInterval,
+			cmd.GC.Interval,
 		)},
 
 		{"build-reaper", lockrunner.NewRunner(
@@ -543,6 +559,16 @@ func (cmd *ATCCommand) Runner(args []string) (ifrit.Runner, error) {
 			clock.NewClock(),
 			30*time.Second,
 		)},
+	}
+
+	if cmd.TelemetryOptIn {
+		url := fmt.Sprintf("http://telemetry.concourse.ci/?version=%s", Version)
+		go func() {
+			_, err := http.Get(url)
+			if err != nil {
+				logger.Error("telemetry-version", err)
+			}
+		}()
 	}
 
 	if cmd.Worker.GardenURL.URL() != nil {
@@ -697,13 +723,13 @@ func (cmd *ATCCommand) constructLogger() (lager.Logger, *lager.ReconfigurableSin
 	return logger, reconfigurableSink
 }
 
-func (cmd *ATCCommand) configureMetrics(logger lager.Logger) {
+func (cmd *ATCCommand) configureMetrics(logger lager.Logger) error {
 	host := cmd.Metrics.HostName
 	if host == "" {
 		host, _ = os.Hostname()
 	}
 
-	metric.Initialize(logger.Session("metrics"), host, cmd.Metrics.Attributes)
+	return metric.Initialize(logger.Session("metrics"), host, cmd.Metrics.Attributes)
 }
 
 func (cmd *ATCCommand) constructDBConn(driverName string, logger lager.Logger, newKey *db.EncryptionKey, oldKey *db.EncryptionKey) (db.Conn, error) {
@@ -752,6 +778,7 @@ func (cmd *ATCCommand) constructWorkerPool(
 	dbWorkerFactory db.WorkerFactory,
 	teamFactory db.TeamFactory,
 	workerVersion *version.Version,
+	baggageclaimResponseHeaderTimeout time.Duration,
 ) worker.Client {
 	imageResourceFetcherFactory := image.NewImageResourceFetcherFactory(
 		resourceFetcherFactory,
@@ -773,6 +800,7 @@ func (cmd *ATCCommand) constructWorkerPool(
 			teamFactory,
 			dbWorkerFactory,
 			workerVersion,
+			baggageclaimResponseHeaderTimeout,
 		),
 	)
 }
@@ -924,7 +952,7 @@ func (cmd *ATCCommand) constructAPIHandler(
 		PublicKey: &signingKey.PublicKey,
 	}
 
-	getTokenValidator := auth.NewTeamAuthValidator(teamFactory, authValidator)
+	getTokenValidator := auth.NewGetTokenValidator(teamFactory)
 
 	checkPipelineAccessHandlerFactory := auth.NewCheckPipelineAccessHandlerFactory(
 		teamFactory,

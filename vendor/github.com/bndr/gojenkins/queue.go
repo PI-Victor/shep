@@ -94,11 +94,11 @@ func (t *Task) Cancel() (bool, error) {
 	qr := map[string]string{
 		"id": strconv.FormatInt(t.Raw.ID, 10),
 	}
-	response, err := t.Jenkins.Requester.Post(t.Jenkins.GetQueueUrl()+"/cancelItem", nil, t.Raw, qr)
+	_, err := t.Jenkins.Requester.Post(t.Jenkins.GetQueueUrl()+"/cancelItem", nil, t.Raw, qr)
 	if err != nil {
 		return false, err
 	}
-	return response.StatusCode == 200, nil
+	return t.Jenkins.Requester.LastResponse.StatusCode == 200, nil
 }
 
 func (t *Task) GetJob() (*Job, error) {
@@ -128,9 +128,9 @@ func (t *Task) GetCauses() []map[string]interface{} {
 }
 
 func (q *Queue) Poll() (int, error) {
-	response, err := q.Jenkins.Requester.GetJSON(q.Base, q.Raw, nil)
+	_, err := q.Jenkins.Requester.GetJSON(q.Base, q.Raw, nil)
 	if err != nil {
 		return 0, err
 	}
-	return response.StatusCode, nil
+	return q.Jenkins.Requester.LastResponse.StatusCode, nil
 }

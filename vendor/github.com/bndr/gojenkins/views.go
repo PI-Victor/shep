@@ -20,14 +20,14 @@ import (
 )
 
 type View struct {
-	Raw     *ViewResponse
+	Raw     *viewResponse
 	Jenkins *Jenkins
 	Base    string
 }
 
-type ViewResponse struct {
+type viewResponse struct {
 	Description string        `json:"description"`
-	Jobs        []InnerJob    `json:"jobs"`
+	Jobs        []job         `json:"jobs"`
 	Name        string        `json:"name"`
 	Property    []interface{} `json:"property"`
 	URL         string        `json:"url"`
@@ -69,26 +69,31 @@ func (v *View) DeleteJob(name string) (bool, error) {
 	return false, errors.New(strconv.Itoa(resp.StatusCode))
 }
 
+
 func (v *View) GetDescription() string {
 	return v.Raw.Description
 }
 
-func (v *View) GetJobs() []InnerJob {
+
+func (v *View) GetJobs() []job {
 	return v.Raw.Jobs
 }
+
 
 func (v *View) GetName() string {
 	return v.Raw.Name
 }
 
+
 func (v *View) GetUrl() string {
 	return v.Raw.URL
 }
 
+
 func (v *View) Poll() (int, error) {
-	response, err := v.Jenkins.Requester.GetJSON(v.Base, v.Raw, nil)
+	_, err := v.Jenkins.Requester.GetJSON(v.Base, v.Raw, nil)
 	if err != nil {
 		return 0, err
 	}
-	return response.StatusCode, nil
+	return v.Jenkins.Requester.LastResponse.StatusCode, nil
 }

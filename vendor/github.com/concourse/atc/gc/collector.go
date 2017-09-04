@@ -1,10 +1,6 @@
 package gc
 
-import (
-	"sync"
-
-	"code.cloudfoundry.org/lager"
-)
+import "code.cloudfoundry.org/lager"
 
 //go:generate counterfeiter . Collector
 
@@ -17,7 +13,6 @@ type aggregateCollector struct {
 	buildCollector                      Collector
 	workerCollector                     Collector
 	resourceCacheUseCollector           Collector
-	resourceConfigUseCollector          Collector
 	resourceConfigCollector             Collector
 	resourceCacheCollector              Collector
 	volumeCollector                     Collector
@@ -30,7 +25,6 @@ func NewCollector(
 	buildCollector Collector,
 	workers Collector,
 	resourceCacheUses Collector,
-	resourceConfigUses Collector,
 	resourceConfigs Collector,
 	resourceCaches Collector,
 	volumes Collector,
@@ -42,7 +36,6 @@ func NewCollector(
 		buildCollector:                      buildCollector,
 		workerCollector:                     workers,
 		resourceCacheUseCollector:           resourceCacheUses,
-		resourceConfigUseCollector:          resourceConfigUses,
 		resourceConfigCollector:             resourceConfigs,
 		resourceCacheCollector:              resourceCaches,
 		volumeCollector:                     volumes,
@@ -69,11 +62,6 @@ func (c *aggregateCollector) Run() error {
 		c.logger.Error("failed-to-run-resource-cache-use-collector", err)
 	}
 
-	err = c.resourceConfigUseCollector.Run()
-	if err != nil {
-		c.logger.Error("failed-to-run-resource-config-use-collector", err)
-	}
-
 	err = c.resourceConfigCollector.Run()
 	if err != nil {
 		c.logger.Error("failed-to-run-resource-config-collector", err)
@@ -89,29 +77,15 @@ func (c *aggregateCollector) Run() error {
 		c.logger.Error("resource-config-check-session-collector", err)
 	}
 
-	wg := new(sync.WaitGroup)
+	err = c.containerCollector.Run()
+	if err != nil {
+		c.logger.Error("container-collector", err)
+	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		err := c.containerCollector.Run()
-		if err != nil {
-			c.logger.Error("container-collector", err)
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		err := c.volumeCollector.Run()
-		if err != nil {
-			c.logger.Error("volume-collector", err)
-		}
-	}()
-
-	wg.Wait()
+	err = c.volumeCollector.Run()
+	if err != nil {
+		c.logger.Error("volume-collector", err)
+	}
 
 	return nil
 }

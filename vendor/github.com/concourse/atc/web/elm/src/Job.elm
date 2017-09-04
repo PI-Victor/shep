@@ -123,16 +123,19 @@ changeToJob flags model =
     )
 
 
-updateWithMessage: Msg -> Model -> ( Model, Cmd Msg, Maybe UpdateMsg)
+updateWithMessage : Msg -> Model -> ( Model, Cmd Msg, Maybe UpdateMsg )
 updateWithMessage message model =
     let
-        (mdl, msg) = update message model
+        ( mdl, msg ) =
+            update message model
     in
         case mdl.job of
             RemoteData.Failure _ ->
-                (mdl, msg, Just UpdateMsg.NotFound)
+                ( mdl, msg, Just UpdateMsg.NotFound )
+
             _ ->
-                (mdl, msg, Nothing)
+                ( mdl, msg, Nothing )
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
@@ -197,7 +200,7 @@ update action model =
                     if status.code == 401 then
                         ( model, LoginRedirect.requestLoginRedirect "" )
                     else if status.code == 404 then
-                        ({ model | job = RemoteData.Failure err}, Cmd.none)
+                        ( { model | job = RemoteData.Failure err }, Cmd.none )
                     else
                         ( model, Cmd.none )
 
@@ -420,7 +423,7 @@ view model =
                                 [ Html.i [ class "fa fa-plus-circle" ] []
                                 ]
                             ]
-                        , Html.h1 [] [ Html.text (model.jobIdentifier.jobName) ]
+                        , Html.h1 [] [ Html.text (job.name) ]
                         ]
                     , Html.div [ class "pagination-header" ]
                         [ viewPaginationBar model

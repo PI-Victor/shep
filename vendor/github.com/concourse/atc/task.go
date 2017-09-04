@@ -37,8 +37,11 @@ type TaskConfig struct {
 }
 
 type ImageResource struct {
-	Type   string `yaml:"type" json:"type" mapstructure:"type"`
+	Type   string `yaml:"type"   json:"type"   mapstructure:"type"`
 	Source Source `yaml:"source" json:"source" mapstructure:"source"`
+
+	Params  *Params  `yaml:"params,omitempty"  json:"params,omitempty"  mapstructure:"params"`
+	Version *Version `yaml:"version,omitempty" json:"version,omitempty" mapstructure:"version"`
 }
 
 func NewTaskConfig(configBytes []byte) (TaskConfig, error) {

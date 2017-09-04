@@ -27,14 +27,11 @@ const (
 	BuildStatusErrored   BuildStatus = "errored"
 )
 
-var buildsQuery = psql.Select("b.id, b.name, b.job_id, b.team_id, b.status, b.manually_triggered, b.scheduled, b.engine, b.engine_metadata, b.public_plan, b.start_time, b.end_time, b.reap_time, j.name, p.id, p.name, t.name, b.nonce").
+var buildsQuery = psql.Select("b.id, b.name, b.job_id, b.team_id, b.status, b.manually_triggered, b.scheduled, b.engine, b.engine_metadata, b.public_plan, b.start_time, b.end_time, b.reap_time, j.name, b.pipeline_id, p.name, t.name, b.nonce").
 	From("builds b").
 	JoinClause("LEFT OUTER JOIN jobs j ON b.job_id = j.id").
-	JoinClause("LEFT OUTER JOIN pipelines p ON j.pipeline_id = p.id").
+	JoinClause("LEFT OUTER JOIN pipelines p ON b.pipeline_id = p.id").
 	JoinClause("LEFT OUTER JOIN teams t ON b.team_id = t.id")
-
-// XXX not something we want to keep
-const qualifiedBuildColumns = "b.id, b.name, b.job_id, b.team_id, b.status, b.manually_triggered, b.scheduled, b.engine, b.engine_metadata, b.public_plan, b.start_time, b.end_time, b.reap_time, j.name as job_name, p.id as pipeline_id, p.name as pipeline_name, t.name as team_name, b.nonce"
 
 //go:generate counterfeiter . Build
 
@@ -1023,6 +1020,36 @@ func (b *build) saveEvent(tx Tx, event atc.Event) error {
 		Values(sq.Expr("nextval('"+buildEventSeq(b.id)+"')"), b.id, string(event.EventType()), string(event.Version()), payload).
 		RunWith(tx).
 		Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createBuild(tx Tx, build *build, vals map[string]interface{}) error {
+	var buildID int
+	err := psql.Insert("builds").
+		SetMap(vals).
+		Suffix("RETURNING id").
+		RunWith(tx).
+		QueryRow().
+		Scan(&buildID)
+	if err != nil {
+		return err
+	}
+
+	err = scanBuild(build, buildsQuery.
+		Where(sq.Eq{"b.id": buildID}).
+		RunWith(tx).
+		QueryRow(),
+		build.conn.EncryptionStrategy(),
+	)
+	if err != nil {
+		return err
+	}
+
+	err = createBuildEventSeq(tx, buildID)
 	if err != nil {
 		return err
 	}

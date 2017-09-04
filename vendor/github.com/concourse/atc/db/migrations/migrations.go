@@ -181,5 +181,13 @@ func New(strategy EncryptionStrategy) []migration.Migrator {
 		AddNonceAndPublicPlanToBuilds,
 		AddWorkerTaskCaches,
 		AddGroupsAndRemoveConfigFromPipeline(strategy),
+		AddPipelineIdToBuilds,
+		UseMd5ForVersions,
+		RemoveSizeInBytesFromVolumes,
+		AddOnDeleteRestrictToResourceConfigsAndCachesAndResourceConfigCheckSessions,
+		AddWorkerResourceConfigCheckSessions,
+		DropResourceConfigUsesAndAddContainerIDToResourceCacheUsesWhileAlsoRemovingResourceIDAndResourceTypeIDFromResourceCacheUses,
+		AddResourceConfigIDToResources,
+		AddResourceConfigIDToResourceTypes,
 	}
 }

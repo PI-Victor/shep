@@ -19,48 +19,29 @@ import "errors"
 // Nodes
 
 type Computers struct {
-	BusyExecutors  int             `json:"busyExecutors"`
-	Computers      []*NodeResponse `json:"computer"`
-	DisplayName    string          `json:"displayName"`
-	TotalExecutors int             `json:"totalExecutors"`
+	BusyExecutors  int            `json:"busyExecutors"`
+	Computers      []nodeResponse `json:"computer"`
+	DisplayName    string         `json:"displayName"`
+	TotalExecutors int            `json:"totalExecutors"`
 }
 
 type Node struct {
-	Raw     *NodeResponse
+	Raw     *nodeResponse
 	Jenkins *Jenkins
 	Base    string
 }
 
-type NodeResponse struct {
-	Actions     []interface{} `json:"actions"`
-	DisplayName string        `json:"displayName"`
-	Executors   []struct {
-		CurrentExecutable struct {
-			Number    int    `json:"number"`
-			URL       string `json:"url"`
-			SubBuilds []struct {
-				Abort             bool        `json:"abort"`
-				Build             interface{} `json:"build"`
-				BuildNumber       int         `json:"buildNumber"`
-				Duration          string      `json:"duration"`
-				Icon              string      `json:"icon"`
-				JobName           string      `json:"jobName"`
-				ParentBuildNumber int         `json:"parentBuildNumber"`
-				ParentJobName     string      `json:"parentJobName"`
-				PhaseName         string      `json:"phaseName"`
-				Result            string      `json:"result"`
-				Retry             bool        `json:"retry"`
-				URL               string      `json:"url"`
-			} `json:"subBuilds"`
-		} `json:"currentExecutable"`
-	} `json:"executors"`
-	Icon                string   `json:"icon"`
-	IconClassName       string   `json:"iconClassName"`
-	Idle                bool     `json:"idle"`
-	JnlpAgent           bool     `json:"jnlpAgent"`
-	LaunchSupported     bool     `json:"launchSupported"`
-	LoadStatistics      struct{} `json:"loadStatistics"`
-	ManualLaunchAllowed bool     `json:"manualLaunchAllowed"`
+type nodeResponse struct {
+	Actions             []interface{} `json:"actions"`
+	DisplayName         string        `json:"displayName"`
+	Executors           []struct{}    `json:"executors"`
+	Icon                string        `json:"icon"`
+	IconClassName       string        `json:"iconClassName"`
+	Idle                bool          `json:"idle"`
+	JnlpAgent           bool          `json:"jnlpAgent"`
+	LaunchSupported     bool          `json:"launchSupported"`
+	LoadStatistics      struct{}      `json:"loadStatistics"`
+	ManualLaunchAllowed bool          `json:"manualLaunchAllowed"`
 	MonitorData         struct {
 		Hudson_NodeMonitors_ArchitectureMonitor interface{} `json:"hudson.node_monitors.ArchitectureMonitor"`
 		Hudson_NodeMonitors_ClockMonitor        interface{} `json:"hudson.node_monitors.ClockMonitor"`
@@ -79,7 +60,7 @@ type NodeResponse struct {
 	TemporarilyOffline bool          `json:"temporarilyOffline"`
 }
 
-func (n *Node) Info() (*NodeResponse, error) {
+func (n *Node) Info() (*nodeResponse, error) {
 	_, err := n.Poll()
 	if err != nil {
 		return nil, err
@@ -146,7 +127,7 @@ func (n *Node) SetOnline() (bool, error) {
 		return n.ToggleTemporarilyOffline()
 	}
 
-	return true, nil
+	return false, nil
 }
 
 func (n *Node) SetOffline() (bool, error) {
@@ -165,7 +146,7 @@ func (n *Node) ToggleTemporarilyOffline(options ...interface{}) (bool, error) {
 	if len(options) > 0 {
 		qr["offlineMessage"] = options[0].(string)
 	}
-	_, err = n.Jenkins.Requester.Post(n.Base+"/toggleOffline", nil, nil, qr)
+	_, err = n.Jenkins.Requester.GetJSON(n.Base+"/toggleOffline", nil, qr)
 	if err != nil {
 		return false, err
 	}
@@ -176,55 +157,13 @@ func (n *Node) ToggleTemporarilyOffline(options ...interface{}) (bool, error) {
 	if state_before == new_state {
 		return false, errors.New("Node state not changed")
 	}
-	return true, nil
+	return false, nil
 }
 
 func (n *Node) Poll() (int, error) {
-	response, err := n.Jenkins.Requester.GetJSON(n.Base, n.Raw, nil)
+	_, err := n.Jenkins.Requester.GetJSON(n.Base, n.Raw, nil)
 	if err != nil {
 		return 0, err
 	}
-	return response.StatusCode, nil
-}
-
-func (n *Node) LaunchNodeBySSH() (int, error) {
-	qr := map[string]string{
-		"json":   "",
-		"Submit": "Launch slave agent",
-	}
-	response, err := n.Jenkins.Requester.Post(n.Base+"/launchSlaveAgent", nil, nil, qr)
-	if err != nil {
-		return 0, err
-	}
-	return response.StatusCode, nil
-}
-
-func (n *Node) Disconnect() (int, error) {
-	qr := map[string]string{
-		"offlineMessage": "",
-		"json":           makeJson(map[string]string{"offlineMessage": ""}),
-		"Submit":         "Yes",
-	}
-	response, err := n.Jenkins.Requester.Post(n.Base+"/doDisconnect", nil, nil, qr)
-	if err != nil {
-		return 0, err
-	}
-	return response.StatusCode, nil
-}
-
-func (n *Node) GetLogText() (string, error) {
-	var log string
-
-	_, err := n.Jenkins.Requester.Post(n.Base+"/log", nil, nil, nil)
-	if err != nil {
-		return "", err
-	}
-
-	qr := map[string]string{"start": "0"}
-	_, err = n.Jenkins.Requester.GetJSON(n.Base+"/logText/progressiveHtml/", &log, qr)
-	if err != nil {
-		return "", nil
-	}
-
-	return log, nil
+	return n.Jenkins.Requester.LastResponse.StatusCode, nil
 }

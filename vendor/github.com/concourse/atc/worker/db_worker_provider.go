@@ -20,17 +20,18 @@ import (
 var ErrDesiredWorkerNotRunning = errors.New("desired garden worker is not known to be running")
 
 type dbWorkerProvider struct {
-	lockFactory                     lock.LockFactory
-	retryBackOffFactory             retryhttp.BackOffFactory
-	imageFactory                    ImageFactory
-	dbResourceCacheFactory          db.ResourceCacheFactory
-	dbResourceConfigFactory         db.ResourceConfigFactory
-	dbWorkerBaseResourceTypeFactory db.WorkerBaseResourceTypeFactory
-	dbWorkerTaskCacheFactory        db.WorkerTaskCacheFactory
-	dbVolumeFactory                 db.VolumeFactory
-	dbTeamFactory                   db.TeamFactory
-	dbWorkerFactory                 db.WorkerFactory
-	workerVersion                   *version.Version
+	lockFactory                       lock.LockFactory
+	retryBackOffFactory               retryhttp.BackOffFactory
+	imageFactory                      ImageFactory
+	dbResourceCacheFactory            db.ResourceCacheFactory
+	dbResourceConfigFactory           db.ResourceConfigFactory
+	dbWorkerBaseResourceTypeFactory   db.WorkerBaseResourceTypeFactory
+	dbWorkerTaskCacheFactory          db.WorkerTaskCacheFactory
+	dbVolumeFactory                   db.VolumeFactory
+	dbTeamFactory                     db.TeamFactory
+	dbWorkerFactory                   db.WorkerFactory
+	workerVersion                     *version.Version
+	baggageclaimResponseHeaderTimeout time.Duration
 }
 
 func NewDBWorkerProvider(
@@ -45,19 +46,21 @@ func NewDBWorkerProvider(
 	dbTeamFactory db.TeamFactory,
 	workerFactory db.WorkerFactory,
 	workerVersion *version.Version,
+	baggageclaimResponseHeaderTimeout time.Duration,
 ) WorkerProvider {
 	return &dbWorkerProvider{
-		lockFactory:                     lockFactory,
-		retryBackOffFactory:             retryBackOffFactory,
-		imageFactory:                    imageFactory,
-		dbResourceCacheFactory:          dbResourceCacheFactory,
-		dbResourceConfigFactory:         dbResourceConfigFactory,
-		dbWorkerBaseResourceTypeFactory: dbWorkerBaseResourceTypeFactory,
-		dbWorkerTaskCacheFactory:        dbWorkerTaskCacheFactory,
-		dbVolumeFactory:                 dbVolumeFactory,
-		dbTeamFactory:                   dbTeamFactory,
-		dbWorkerFactory:                 workerFactory,
-		workerVersion:                   workerVersion,
+		lockFactory:                       lockFactory,
+		retryBackOffFactory:               retryBackOffFactory,
+		imageFactory:                      imageFactory,
+		dbResourceCacheFactory:            dbResourceCacheFactory,
+		dbResourceConfigFactory:           dbResourceConfigFactory,
+		dbWorkerBaseResourceTypeFactory:   dbWorkerBaseResourceTypeFactory,
+		dbWorkerTaskCacheFactory:          dbWorkerTaskCacheFactory,
+		dbVolumeFactory:                   dbVolumeFactory,
+		dbTeamFactory:                     dbTeamFactory,
+		dbWorkerFactory:                   workerFactory,
+		workerVersion:                     workerVersion,
+		baggageclaimResponseHeaderTimeout: baggageclaimResponseHeaderTimeout,
 	}
 }
 
@@ -145,7 +148,7 @@ func (provider *dbWorkerProvider) newGardenWorker(logger lager.Logger, tikTok cl
 		provider.retryBackOffFactory,
 	)
 
-	connection := NewRetryableConnection(gcf.BuildConnection())
+	gClient := gclient.New(NewRetryableConnection(gcf.BuildConnection()))
 
 	bClient := bclient.New("", transport.NewBaggageclaimRoundTripper(
 		savedWorker.Name(),
@@ -153,7 +156,7 @@ func (provider *dbWorkerProvider) newGardenWorker(logger lager.Logger, tikTok cl
 		provider.dbWorkerFactory,
 		&http.Transport{
 			DisableKeepAlives:     true,
-			ResponseHeaderTimeout: 10 * time.Minute,
+			ResponseHeaderTimeout: provider.baggageclaimResponseHeaderTimeout,
 		},
 	))
 
@@ -168,7 +171,7 @@ func (provider *dbWorkerProvider) newGardenWorker(logger lager.Logger, tikTok cl
 	)
 
 	containerProviderFactory := NewContainerProviderFactory(
-		gclient.New(connection),
+		gClient,
 		bClient,
 		volumeClient,
 		provider.imageFactory,
@@ -196,5 +199,7 @@ func (provider *dbWorkerProvider) newGardenWorker(logger lager.Logger, tikTok cl
 		savedWorker.Name(),
 		savedWorker.StartTime(),
 		savedWorker.Version(),
+		gClient,
+		bClient,
 	)
 }

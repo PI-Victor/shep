@@ -10,7 +10,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/PI-Victor/shep/pkg/services"
+	"github.com/cloudflavor/shep/pkg/services"
 )
 
 var (

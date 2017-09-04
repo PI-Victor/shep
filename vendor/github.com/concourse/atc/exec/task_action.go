@@ -185,7 +185,6 @@ func (action *TaskAction) Run(
 		logger,
 		signals,
 		action.imageFetchingDelegate,
-		db.ForBuild(action.buildID),
 		db.NewBuildStepContainerOwner(action.buildID, action.planID),
 		action.containerMetadata,
 		containerSpec,
@@ -316,8 +315,10 @@ func (action *TaskAction) containerSpec(logger lager.Logger, repository *worker.
 		imageSpec.ImageArtifactName = worker.ArtifactName(action.imageArtifactName)
 	} else if config.ImageResource != nil {
 		imageSpec.ImageResource = &worker.ImageResource{
-			Type:   config.ImageResource.Type,
-			Source: creds.NewSource(action.variables, config.ImageResource.Source),
+			Type:    config.ImageResource.Type,
+			Source:  creds.NewSource(action.variables, config.ImageResource.Source),
+			Params:  config.ImageResource.Params,
+			Version: config.ImageResource.Version,
 		}
 	} else if config.RootfsURI != "" {
 		imageSpec.ImageURL = config.RootfsURI

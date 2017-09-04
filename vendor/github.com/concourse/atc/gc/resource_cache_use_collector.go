@@ -6,48 +6,30 @@ import (
 )
 
 type resourceCacheUseCollector struct {
-	logger       lager.Logger
-	cacheFactory db.ResourceCacheFactory
+	logger         lager.Logger
+	cacheLifecycle db.ResourceCacheLifecycle
 }
 
 func NewResourceCacheUseCollector(
 	logger lager.Logger,
-	cacheFactory db.ResourceCacheFactory,
+	cacheLifecycle db.ResourceCacheLifecycle,
 ) Collector {
 	return &resourceCacheUseCollector{
-		logger:       logger.Session("resource-cache-use-collector"),
-		cacheFactory: cacheFactory,
+		logger:         logger.Session("resource-cache-use-collector"),
+		cacheLifecycle: cacheLifecycle,
 	}
 }
 
 func (rcuc *resourceCacheUseCollector) Run() error {
-	err := rcuc.cacheFactory.CleanBuildImageResourceCaches()
+	err := rcuc.cacheLifecycle.CleanBuildImageResourceCaches(rcuc.logger.Session("clean-build-images"))
 	if err != nil {
-		rcuc.logger.Error("unable-to-clean-up-for-builds", err)
+		rcuc.logger.Error("error-cleaning-build-image-uses", err)
 		return err
 	}
 
-	err = rcuc.cacheFactory.CleanUsesForFinishedBuilds()
+	err = rcuc.cacheLifecycle.CleanUsesForFinishedBuilds(rcuc.logger.Session("clean-for-finished-builds"))
 	if err != nil {
-		rcuc.logger.Error("unable-to-clean-up-for-builds", err)
-		return err
-	}
-
-	err = rcuc.cacheFactory.CleanUsesForInactiveResourceTypes()
-	if err != nil {
-		rcuc.logger.Error("unable-to-clean-up-for-types", err)
-		return err
-	}
-
-	err = rcuc.cacheFactory.CleanUsesForInactiveResources()
-	if err != nil {
-		rcuc.logger.Error("unable-to-clean-up-for-resources", err)
-		return err
-	}
-
-	err = rcuc.cacheFactory.CleanUsesForPausedPipelineResources()
-	if err != nil {
-		rcuc.logger.Error("unable-to-clean-up-for-paused-pipeline-resources", err)
+		rcuc.logger.Error("error-cleaning-finished-build-uses", err)
 		return err
 	}
 

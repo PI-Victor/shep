@@ -5,8 +5,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/PI-Victor/shep/pkg/scheduler"
-	"github.com/PI-Victor/shep/pkg/services"
+	"github.com/cloudflavor/shep/pkg/scheduler"
+	"github.com/cloudflavor/shep/pkg/services"
 )
 
 var (

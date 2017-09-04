@@ -19,7 +19,9 @@ import QueryString
 import Pipeline
 import BetaPipeline
 import TeamSelection
+import Dashboard
 import UpdateMsg exposing (UpdateMsg)
+
 
 -- TODO: move ports somewhere else
 
@@ -41,10 +43,12 @@ type Model
     | BetaPipelineModel BetaPipeline.Model
     | SelectTeamModel TeamSelection.Model
     | NotFoundModel NotFound.Model
+    | DashboardModel Dashboard.Model
 
 
 type Msg
     = PipelinesFetched (Result Http.Error (List Concourse.Pipeline))
+    | DashboardPipelinesFetched (Result Http.Error (List Concourse.Pipeline))
     | DefaultPipelineFetched (Maybe Concourse.Pipeline)
     | NoPipelineMsg NoPipeline.Msg
     | BuildMsg (Autoscroll.Msg Build.Msg)
@@ -52,6 +56,7 @@ type Msg
     | ResourceMsg Resource.Msg
     | LoginMsg Login.Msg
     | PipelineMsg Pipeline.Msg
+    | DashboardMsg Dashboard.Msg
     | BetaPipelineMsg BetaPipeline.Msg
     | SelectTeamMsg TeamSelection.Msg
     | NewCSRFToken String
@@ -153,6 +158,10 @@ init turbulencePath route =
                     , route = route
                     }
 
+        Routes.Dashboard ->
+            superDupleWrap ( DashboardModel, DashboardMsg ) <|
+                Dashboard.init turbulencePath
+
         Routes.Home ->
             ( WaitingModel route
             , Cmd.batch
@@ -162,18 +171,17 @@ init turbulencePath route =
             )
 
 
---updateWithMsg String -> a msg -> b mdl -> Maybe UpdateMsg -> ( model, Cmd msg )
---updateWithMsg notFoundSrc message model outMessage=
---    case outMessage of
---        Just Job.NotFound -> (NotFoundModel { notFoundImgSrc = notFoundSrc }, setTitle "Not Found ")
---        Nothing -> superDupleWrap ( mdl, msg) <| (model, message)
-handleNotFound : String -> (a -> Model, c -> Msg) -> (a, Cmd c, Maybe UpdateMsg) -> ( Model, Cmd Msg )
-handleNotFound notFound (mdlFunc, msgFunc) (mdl, msg, outMessage) =
+handleNotFound : String -> ( a -> Model, c -> Msg ) -> ( a, Cmd c, Maybe UpdateMsg ) -> ( Model, Cmd Msg )
+handleNotFound notFound ( mdlFunc, msgFunc ) ( mdl, msg, outMessage ) =
     case outMessage of
-        Just UpdateMsg.NotFound -> (NotFoundModel { notFoundImgSrc = notFound }, setTitle "Not Found ")
-        Nothing -> superDupleWrap ( mdlFunc, msgFunc ) <| (mdl, msg)
+        Just UpdateMsg.NotFound ->
+            ( NotFoundModel { notFoundImgSrc = notFound }, setTitle "Not Found " )
 
-update : String ->  String -> Concourse.CSRFToken -> Msg -> Model -> ( Model, Cmd Msg )
+        Nothing ->
+            superDupleWrap ( mdlFunc, msgFunc ) <| ( mdl, msg )
+
+
+update : String -> String -> Concourse.CSRFToken -> Msg -> Model -> ( Model, Cmd Msg )
 update turbulence notFound csrfToken msg mdl =
     case ( msg, mdl ) of
         ( NoPipelineMsg msg, model ) ->
@@ -190,7 +198,6 @@ update turbulence notFound csrfToken msg mdl =
                 ( BuildModel { scrollModel | subModel = newBuildModel }, buildCmd |> Cmd.map (\buildMsg -> BuildMsg (Autoscroll.SubMsg buildMsg)) )
 
         ( BuildMsg message, BuildModel scrollModel ) ->
-
             let
                 subModel =
                     scrollModel.subModel
@@ -198,7 +205,7 @@ update turbulence notFound csrfToken msg mdl =
                 model =
                     { scrollModel | subModel = { subModel | csrfToken = csrfToken } }
             in
-                  handleNotFound notFound ( BuildModel, BuildMsg ) (Autoscroll.update Build.updateWithMessage message model)
+                handleNotFound notFound ( BuildModel, BuildMsg ) (Autoscroll.update Build.updateWithMessage message model)
 
         ( NewCSRFToken c, JobModel model ) ->
             ( JobModel { model | csrfToken = c }, Cmd.none )
@@ -208,10 +215,12 @@ update turbulence notFound csrfToken msg mdl =
 
         ( LoginMsg message, LoginModel model ) ->
             let
-                (mdl, msg) = Login.update message model
---            superDupleWrap ( LoginModel, LoginMsg ) <| Login.update message model
+                ( mdl, msg ) =
+                    Login.update message model
+
+                --            superDupleWrap ( LoginModel, LoginMsg ) <| Login.update message model
             in
-                (LoginModel mdl, Cmd.map LoginMsg msg)
+                ( LoginModel mdl, Cmd.map LoginMsg msg )
 
         ( PipelineMsg message, PipelineModel model ) ->
             handleNotFound notFound ( PipelineModel, PipelineMsg ) (Pipeline.updateWithMessage message model)
@@ -227,6 +236,9 @@ update turbulence notFound csrfToken msg mdl =
 
         ( SelectTeamMsg message, SelectTeamModel model ) ->
             superDupleWrap ( SelectTeamModel, SelectTeamMsg ) <| TeamSelection.update message model
+
+        ( DashboardMsg message, DashboardModel model ) ->
+            superDupleWrap ( DashboardModel, DashboardMsg ) <| Dashboard.update message model
 
         ( DefaultPipelineFetched pipeline, WaitingModel route ) ->
             case pipeline of
@@ -351,6 +363,9 @@ view mdl =
         NotFoundModel model ->
             NotFound.view model
 
+        DashboardModel model ->
+            Dashboard.view model
+
 
 subscriptions : Model -> Sub Msg
 subscriptions mdl =
@@ -385,7 +400,8 @@ subscriptions mdl =
         NotFoundModel _ ->
             Sub.none
 
-
+        DashboardModel model ->
+            Sub.map DashboardMsg <| Dashboard.subscriptions model
 
 
 fetchPipelines : Cmd Msg

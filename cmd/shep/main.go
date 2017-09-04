@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/PI-Victor/shep/pkg/cli"
+	"github.com/cloudflavor/shep/pkg/cli"
 )
 
 const asciiChar = `

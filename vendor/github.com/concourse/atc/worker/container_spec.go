@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/concourse/atc"
 	"github.com/concourse/atc/creds"
 )
 
@@ -49,8 +50,10 @@ type ImageSpec struct {
 }
 
 type ImageResource struct {
-	Type   string
-	Source creds.Source
+	Type    string
+	Source  creds.Source
+	Params  *atc.Params
+	Version *atc.Version
 }
 
 func (spec ContainerSpec) WorkerSpec() WorkerSpec {

@@ -1,7 +1,6 @@
 # Jenkins API Client for Go
 
 [![GoDoc](https://godoc.org/github.com/bndr/gojenkins?status.svg)](https://godoc.org/github.com/bndr/gojenkins)
-[![Go Report Cart](https://goreportcard.com/badge/github.com/bndr/gojenkins)](https://goreportcard.com/report/github.com/bndr/gojenkins)
 [![Build Status](https://travis-ci.org/bndr/gojenkins.svg?branch=master)](https://travis-ci.org/bndr/gojenkins)
 
 ## About
@@ -28,28 +27,19 @@ These are some of the features that are currently implemented:
 
 import "github.com/bndr/gojenkins"
 
-jenkins := gojenkins.CreateJenkins("http://localhost:8080/", "admin", "admin")
-// Provide CA certificate if server is using self-signed certificate
-// caCert, _ := ioutil.ReadFile("/tmp/ca.crt")
-// jenkins.Requester.CACert = caCert
-_, err := jenkins.Init()
-
+jenkins, err := gojenkins.CreateJenkins("http://localhost:8080/", "admin", "admin").Init()
 
 if err != nil {
   panic("Something Went Wrong")
 }
 
-build, err := jenkins.GetJob("job_name")
+build, err := jenkins.GetJob("job_name").GetLastSuccessfulBuild()
+
 if err != nil {
   panic("Job Does Not Exist")
 }
 
-lastSuccessBuild := build.GetLastSuccessfulBuild()
-if err != nil {
-  panic("Last SuccessBuild does not exist")
-}
-
-duration := lastSuccessBuild.GetDuration()
+duration := build.GetDuration()
 
 job, err := jenkins.GetJob("jobname")
 
@@ -59,7 +49,7 @@ if err != nil {
 
 job.Rename("SomeotherJobName")
 
-configString := `<?xml version='1.0' encoding='UTF-8'?>
+configString := `<?xml version='1.0' encoding='UTF-8'?> 
 <project>
   <actions/>
   <description></description>
@@ -128,7 +118,7 @@ if err != nil {
 for _, build := range builds {
   buildId := build.Number
   data, err := jenkins.GetBuild(jobName, buildId)
-
+  
   if err != nil {
     panic(err)
   }
@@ -174,54 +164,8 @@ if err != nil {
 
 status, err := view.AddJob("jobName")
 
-if status != nil {
+if status {
   fmt.Println("Job has been added to view")
-}
-
-```
-
-### Create nested Folders and create Jobs in them
-
-```go
-
-// Create parent folder
-pFolder, err := jenkins.CreateFolder("parentFolder")
-if err != nil {
-  panic(err)
-}
-
-// Create child folder in parent folder
-cFolder, err := jenkins.CreateFolder("childFolder", pFolder.GetName())
-if err != nil {
-  panic(err)
-}
-
-// Create job in child folder
-configString := `<?xml version='1.0' encoding='UTF-8'?>
-<project>
-  <actions/>
-  <description></description>
-  <keepDependencies>false</keepDependencies>
-  <properties/>
-  <scm class="hudson.scm.NullSCM"/>
-  <canRoam>true</canRoam>
-  <disabled>false</disabled>
-  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
-  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
-  <triggers class="vector"/>
-  <concurrentBuild>false</concurrentBuild>
-  <builders/>
-  <publishers/>
-  <buildWrappers/>
-</project>`
-
-job, err := jenkins.CreateJobInFolder(configString, "jobInFolder", pFolder.GetName(), cFolder.GetName())
-if err != nil {
-  panic(err)
-}
-
-if job != nil {
-	fmt.Println("Job has been created in child folder")
 }
 
 ```
@@ -262,7 +206,7 @@ All Contributions are welcome. The todo list is on the bottom of this README. Fe
 
 ## TODO
 
-Although the basic features are implemented there are many optional features that are on the todo list.
+Although the basic features are implemented there are many optional features that are on the todo list. 
 
 * Kerberos Authentication
 * CLI Tool

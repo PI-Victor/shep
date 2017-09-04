@@ -4,8 +4,8 @@ import (
 	"errors"
 
 	"code.cloudfoundry.org/lager"
+	"github.com/concourse/atc"
 	"github.com/concourse/atc/creds"
-	"github.com/concourse/atc/db"
 	"github.com/concourse/atc/worker"
 )
 
@@ -30,7 +30,6 @@ func (f *imageFactory) GetImage(
 	imageSpec worker.ImageSpec,
 	teamID int,
 	delegate worker.ImageFetchingDelegate,
-	resourceUser db.ResourceUser,
 	resourceTypes creds.VersionedResourceTypes,
 ) (worker.Image, error) {
 	if imageSpec.ImageArtifactSource != nil {
@@ -59,14 +58,8 @@ func (f *imageFactory) GetImage(
 	// check if custom resource
 	resourceType, found := resourceTypes.Lookup(imageSpec.ResourceType)
 	if found {
-		// source, err := resourceType.Source.Evaluate()
-		// if err != nil {
-		// 	return nil, err
-		// }
-		//
 		imageResourceFetcher := f.imageResourceFetcherFactory.NewImageResourceFetcher(
 			workerClient,
-			resourceUser,
 			worker.ImageResource{
 				Type:   resourceType.Type,
 				Source: resourceType.Source,
@@ -87,11 +80,15 @@ func (f *imageFactory) GetImage(
 	}
 
 	if imageSpec.ImageResource != nil {
+		var version atc.Version
+		if imageSpec.ImageResource.Version != nil {
+			version = *imageSpec.ImageResource.Version
+		}
+
 		imageResourceFetcher := f.imageResourceFetcherFactory.NewImageResourceFetcher(
 			workerClient,
-			resourceUser,
 			*imageSpec.ImageResource,
-			nil,
+			version,
 			teamID,
 			resourceTypes,
 			delegate,

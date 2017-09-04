@@ -8,10 +8,12 @@ import (
 	"path/filepath"
 	"time"
 
+	"code.cloudfoundry.org/garden"
 	"code.cloudfoundry.org/lager"
 	"github.com/concourse/atc"
 	"github.com/concourse/atc/creds"
 	"github.com/concourse/atc/db"
+	"github.com/concourse/baggageclaim"
 )
 
 //go:generate counterfeiter . WorkerProvider
@@ -122,7 +124,6 @@ func (pool *pool) FindOrCreateContainer(
 	logger lager.Logger,
 	signals <-chan os.Signal,
 	delegate ImageFetchingDelegate,
-	user db.ResourceUser,
 	owner db.ContainerOwner,
 	metadata db.ContainerMetadata,
 	spec ContainerSpec,
@@ -175,7 +176,6 @@ func (pool *pool) FindOrCreateContainer(
 		logger,
 		signals,
 		delegate,
-		user,
 		owner,
 		metadata,
 		spec,
@@ -206,6 +206,14 @@ func (*pool) FindResourceTypeByPath(string) (atc.WorkerResourceType, bool) {
 
 func (*pool) LookupVolume(lager.Logger, string) (Volume, bool, error) {
 	return nil, false, errors.New("LookupVolume not implemented for pool")
+}
+
+func (*pool) GardenClient() garden.Client {
+	panic("GardenClient not implemented for pool")
+}
+
+func (*pool) BaggageclaimClient() baggageclaim.Client {
+	panic("BaggageclaimClient not implemented for pool")
 }
 
 func resourcesDir(suffix string) string {

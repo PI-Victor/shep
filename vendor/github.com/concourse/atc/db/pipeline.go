@@ -95,6 +95,8 @@ type Pipeline interface {
 
 	Destroy() error
 	Rename(string) error
+
+	CreateOneOffBuild() (Build, error)
 }
 
 type pipeline struct {
@@ -256,31 +258,6 @@ func (p *pipeline) CreateJobBuild(jobName string) (Build, error) {
 	return build, nil
 }
 
-func (p *pipeline) NextBuildInputs(jobName string) ([]BuildInput, bool, error) {
-	var found bool
-	err := psql.Select("inputs_determined").
-		From("jobs").
-		Where(sq.Eq{
-			"name":        jobName,
-			"pipeline_id": p.id,
-		}).
-		RunWith(p.conn).
-		QueryRow().
-		Scan(&found)
-	if err != nil {
-		return nil, false, err
-	}
-
-	if !found {
-		return nil, false, nil
-	}
-
-	// there is a possible race condition where found is true at first but the
-	// inputs are deleted by the time we get here
-	buildInputs, err := p.getJobBuildInputs("next_build_inputs", jobName)
-	return buildInputs, true, err
-}
-
 func (p *pipeline) SetResourceCheckError(resource Resource, cause error) error {
 	var err error
 
@@ -306,9 +283,9 @@ func (p *pipeline) GetAllPendingBuilds() (map[string][]Build, error) {
 
 	rows, err := buildsQuery.
 		Where(sq.Eq{
-			"b.status": BuildStatusPending,
-			"j.active": true,
-			"p.id":     p.id,
+			"b.status":      BuildStatusPending,
+			"j.active":      true,
+			"b.pipeline_id": p.id,
 		}).
 		OrderBy("b.id").
 		RunWith(p.conn).
@@ -830,17 +807,22 @@ func (p *pipeline) Dashboard() (Dashboard, atc.GroupConfigs, error) {
 		return nil, nil, err
 	}
 
-	startedBuilds, err := p.getLastJobBuildsSatisfying("b.status = 'started'")
+	startedBuilds, err := p.getLastJobBuildsSatisfying(sq.Eq{"b.status": BuildStatusStarted})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	pendingBuilds, err := p.getLastJobBuildsSatisfying("b.status = 'pending'")
+	pendingBuilds, err := p.getLastJobBuildsSatisfying(sq.Eq{"b.status": BuildStatusPending})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	finishedBuilds, err := p.getLastJobBuildsSatisfying("b.status NOT IN ('pending', 'started')")
+	finishedBuilds, err := p.getLastJobBuildsSatisfying(sq.NotEq{"b.status": []BuildStatus{BuildStatusPending, BuildStatusStarted}})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	transitionBuilds, err := p.getTransitionBuilds()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -858,6 +840,10 @@ func (p *pipeline) Dashboard() (Dashboard, atc.GroupConfigs, error) {
 
 		if finishedBuild, found := finishedBuilds[job.Name()]; found {
 			dashboardJob.FinishedBuild = finishedBuild
+		}
+
+		if transitionBuild, found := transitionBuilds[job.Name()]; found {
+			dashboardJob.TransitionBuild = transitionBuild
 		}
 
 		dashboard = append(dashboard, dashboardJob)
@@ -1247,6 +1233,33 @@ func (p *pipeline) saveOutput(buildID int, vr VersionedResource, explicit bool) 
 	return nil
 }
 
+func (p *pipeline) CreateOneOffBuild() (Build, error) {
+	tx, err := p.conn.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Rollback()
+
+	build := &build{conn: p.conn, lockFactory: p.lockFactory}
+	err = createBuild(tx, build, map[string]interface{}{
+		"name":        sq.Expr("nextval('one_off_name')"),
+		"pipeline_id": p.id,
+		"team_id":     p.teamID,
+		"status":      BuildStatusPending,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return build, nil
+}
+
 func (p *pipeline) saveInputTx(tx Tx, buildID int, input BuildInput) error {
 	var resourceID int
 	err := psql.Select("id").
@@ -1610,24 +1623,83 @@ func (p *pipeline) getLatestModifiedTime() (time.Time, error) {
 	return max_modified_time, err
 }
 
-func (p *pipeline) getLastJobBuildsSatisfying(bRequirement string) (map[string]Build, error) {
-	rows, err := p.conn.Query(`
-		 SELECT `+qualifiedBuildColumns+`
-		 FROM builds b, jobs j, pipelines p, teams t,
-			 (
-				 SELECT b.job_id AS job_id, MAX(b.id) AS id
-				 FROM builds b, jobs j
-				 WHERE b.job_id = j.id
-					 AND `+bRequirement+`
-					 AND j.pipeline_id = $1
-				 GROUP BY b.job_id
-			 ) max
-		 WHERE b.job_id = j.id
-			 AND b.id = max.id
-			 AND p.id = $1
-			 AND j.pipeline_id = p.id
-			 AND b.team_id = t.id
-  `, p.id)
+func (p *pipeline) getTransitionBuilds() (map[string]Build, error) {
+	buildCondition := fmt.Sprintf("j.pipeline_id = $1 AND b.status NOT IN ('%s', '%s')", BuildStatusPending, BuildStatusStarted)
+
+	beforeTransitionBuildsQuery := fmt.Sprintf(`
+			SELECT b.job_id, MAX(b.id)
+			FROM builds b
+			LEFT OUTER JOIN jobs j ON (b.job_id = j.id)
+			LEFT OUTER JOIN (
+				SELECT job_id, status
+				FROM builds
+				WHERE id IN (
+					SELECT MAX(b.id)
+					FROM builds b
+					LEFT OUTER JOIN jobs j ON (j.id = b.job_id)
+					WHERE %s
+					GROUP BY j.id
+				)
+			) s ON b.job_id = s.job_id
+			WHERE b.status != s.status AND %s
+			GROUP BY b.job_id
+		`,
+		buildCondition,
+		buildCondition,
+	)
+
+	query, _, err := buildsQuery.Options(`DISTINCT ON (b.job_id)`).
+		Join(`before_transition_builds ON b.job_id = before_transition_builds.job_id`).
+		Where(`b.id > before_transition_builds.max`).
+		OrderBy(`b.job_id, b.id ASC`).
+		ToSql()
+
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := p.conn.Query(`WITH before_transition_builds AS (`+beforeTransitionBuildsQuery+`)`+query, p.id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	transitionBuilds := make(map[string]Build)
+
+	for rows.Next() {
+		build := &build{conn: p.conn, lockFactory: p.lockFactory}
+		err := scanBuild(build, rows, p.conn.EncryptionStrategy())
+		if err != nil {
+			return nil, err
+		}
+		transitionBuilds[build.JobName()] = build
+	}
+
+	return transitionBuilds, nil
+}
+
+func (p *pipeline) getLastJobBuildsSatisfying(buildCondition sq.Sqlizer) (map[string]Build, error) {
+	maxQ, maxArgs, err := psql.Select("MAX(b.id) AS id").
+		From("builds b").
+		Join("jobs j ON j.id = b.job_id").
+		Where(buildCondition).
+		Where(sq.Eq{"j.pipeline_id": p.id}).
+		GroupBy("b.job_id").
+		ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	buildsQ, _, err := buildsQuery.
+		Where(sq.Expr(`b.id IN (` + maxQ + `)`)).
+		ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := p.conn.Query(buildsQ, maxArgs...)
 	if err != nil {
 		return nil, err
 	}

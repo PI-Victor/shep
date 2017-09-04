@@ -21,7 +21,6 @@ import (
 )
 
 var ErrConfigComparisonFailed = errors.New("comparison with existing config failed during save")
-var ErrTeamDisappeared = errors.New("team disappeared")
 
 //go:generate counterfeiter . Team
 
@@ -341,7 +340,8 @@ func (t *team) FindCheckContainers(logger lager.Logger, pipelineName string, res
 	}
 
 	rows, err := selectContainers("c").
-		Join("resource_config_check_sessions rccs ON rccs.id = c.resource_config_check_session_id").
+		Join("worker_resource_config_check_sessions wrccs ON wrccs.id = c.worker_resource_config_check_session_id").
+		Join("resource_config_check_sessions rccs ON rccs.id = wrccs.resource_config_check_session_id").
 		Where(sq.Eq{
 			"rccs.resource_config_id": resourceConfig.ID,
 			"c.team_id":               t.id,
@@ -737,33 +737,12 @@ func (t *team) CreateOneOffBuild() (Build, error) {
 
 	defer tx.Rollback()
 
-	var buildID int
-	err = psql.Insert("builds").
-		Columns("team_id", "name", "status").
-		Values(t.id, sq.Expr("nextval('one_off_name')"), "pending").
-		Suffix("RETURNING id").
-		RunWith(tx).
-		QueryRow().
-		Scan(&buildID)
-	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code.Name() == "foreign_key_violation" {
-			return nil, ErrTeamDisappeared
-		}
-		return nil, err
-	}
-
 	build := &build{conn: t.conn, lockFactory: t.lockFactory}
-	err = scanBuild(build, buildsQuery.
-		Where(sq.Eq{"b.id": buildID}).
-		RunWith(tx).
-		QueryRow(),
-		t.conn.EncryptionStrategy(),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	err = createBuildEventSeq(tx, buildID)
+	err = createBuild(tx, build, map[string]interface{}{
+		"name":    sq.Expr("nextval('one_off_name')"),
+		"team_id": t.id,
+		"status":  BuildStatusPending,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -965,13 +944,11 @@ func (t *team) saveResource(tx Tx, resource atc.ResourceConfig, pipelineID int) 
 		return err
 	}
 
-	sourceHash := mapHash(resource.Source)
-
 	updated, err := checkIfRowsUpdated(tx, `
 		UPDATE resources
-		SET config = $3, source_hash=$4, active = true, nonce = $5
+		SET config = $3, active = true, nonce = $4
 		WHERE name = $1 AND pipeline_id = $2
-	`, resource.Name, pipelineID, encryptedPayload, sourceHash, nonce)
+	`, resource.Name, pipelineID, encryptedPayload, nonce)
 	if err != nil {
 		return err
 	}
@@ -981,9 +958,9 @@ func (t *team) saveResource(tx Tx, resource atc.ResourceConfig, pipelineID int) 
 	}
 
 	_, err = tx.Exec(`
-		INSERT INTO resources (name, pipeline_id, config, source_hash, active, nonce)
-		VALUES ($1, $2, $3, $4, true, $5)
-	`, resource.Name, pipelineID, encryptedPayload, sourceHash, nonce)
+		INSERT INTO resources (name, pipeline_id, config, active, nonce)
+		VALUES ($1, $2, $3, true, $4)
+	`, resource.Name, pipelineID, encryptedPayload, nonce)
 
 	return swallowUniqueViolation(err)
 }

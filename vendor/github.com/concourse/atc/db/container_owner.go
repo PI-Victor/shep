@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/concourse/atc"
@@ -113,24 +112,23 @@ func (c buildStepContainerOwner) sqlMap() map[string]interface{} {
 // worker base resource type disappear, or the expiry is reached, the container
 // can be removed.
 func NewResourceConfigCheckSessionContainerOwner(
-	resourceConfig *UsedResourceConfig,
+	resourceConfigCheckSession ResourceConfigCheckSession,
 ) ContainerOwner {
 	return resourceConfigCheckSessionContainerOwner{
-		UsedResourceConfig: resourceConfig,
+		resourceConfigCheckSession: resourceConfigCheckSession,
 	}
 }
 
 type resourceConfigCheckSessionContainerOwner struct {
-	UsedResourceConfig *UsedResourceConfig
+	resourceConfigCheckSession ResourceConfigCheckSession
 }
 
 func (c resourceConfigCheckSessionContainerOwner) Find(conn Conn) (sq.Eq, bool, error) {
 	var id int
 	err := psql.Select("id").
-		From("resource_config_check_sessions").
+		From("worker_resource_config_check_sessions").
 		Where(sq.And{
-			sq.Eq{"resource_config_id": c.UsedResourceConfig.ID},
-			sq.Expr("expires_at > NOW()"),
+			sq.Eq{"resource_config_check_session_id": c.resourceConfigCheckSession.ID()},
 		}).
 		RunWith(conn).
 		QueryRow().
@@ -144,7 +142,7 @@ func (c resourceConfigCheckSessionContainerOwner) Find(conn Conn) (sq.Eq, bool, 
 	}
 
 	return sq.Eq{
-		"resource_config_check_session_id": id,
+		"worker_resource_config_check_session_id": id,
 	}, true, nil
 }
 
@@ -154,7 +152,7 @@ func (c resourceConfigCheckSessionContainerOwner) Create(tx Tx, workerName strin
 		From("worker_base_resource_types").
 		Where(sq.Eq{
 			"worker_name":           workerName,
-			"base_resource_type_id": c.UsedResourceConfig.OriginBaseResourceType().ID,
+			"base_resource_type_id": c.resourceConfigCheckSession.ResourceConfig().OriginBaseResourceType().ID,
 		}).
 		RunWith(tx).
 		QueryRow().
@@ -163,48 +161,21 @@ func (c resourceConfigCheckSessionContainerOwner) Create(tx Tx, workerName strin
 		return nil, err
 	}
 
-	var rccsID int
-	err = psql.Select("id").
-		From("resource_config_check_sessions").
-		Where(sq.Eq{
-			"resource_config_id":           c.UsedResourceConfig.ID,
-			"worker_base_resource_type_id": wbrtID,
+	var wrccsID int
+	err = psql.Insert("worker_resource_config_check_sessions").
+		SetMap(map[string]interface{}{
+			"resource_config_check_session_id": c.resourceConfigCheckSession.ID(),
+			"worker_base_resource_type_id":     wbrtID,
 		}).
+		Suffix("RETURNING id").
 		RunWith(tx).
 		QueryRow().
-		Scan(&rccsID)
+		Scan(&wrccsID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			var biub time.Time
-			err = psql.Select("NOW() + LEAST(GREATEST('5 minutes'::interval, NOW() - to_timestamp(w.start_time)), '1 hour'::interval)").
-				From("workers w").
-				Where(sq.Eq{"w.name": workerName}).
-				RunWith(tx).
-				QueryRow().
-				Scan(&biub)
-			if err != nil {
-				return nil, err
-			}
-
-			err = psql.Insert("resource_config_check_sessions").
-				SetMap(map[string]interface{}{
-					"resource_config_id":           c.UsedResourceConfig.ID,
-					"worker_base_resource_type_id": wbrtID,
-					"expires_at":                   biub,
-				}).
-				Suffix("RETURNING id").
-				RunWith(tx).
-				QueryRow().
-				Scan(&rccsID)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
-	return sq.Eq{
-		"resource_config_check_session_id": rccsID,
+	return map[string]interface{}{
+		"worker_resource_config_check_session_id": wrccsID,
 	}, nil
 }

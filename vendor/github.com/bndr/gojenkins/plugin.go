@@ -20,12 +20,12 @@ import (
 
 type Plugins struct {
 	Jenkins *Jenkins
-	Raw     *PluginResponse
+	Raw     *pluginResponse
 	Base    string
 	Depth   int
 }
 
-type PluginResponse struct {
+type pluginResponse struct {
 	Plugins []Plugin `json:"plugins"`
 }
 
@@ -67,9 +67,9 @@ func (p *Plugins) Poll() (int, error) {
 	qr := map[string]string{
 		"depth": strconv.Itoa(p.Depth),
 	}
-	response, err := p.Jenkins.Requester.GetJSON(p.Base, p.Raw, qr)
+	_, err := p.Jenkins.Requester.GetJSON(p.Base, p.Raw, qr)
 	if err != nil {
 		return 0, err
 	}
-	return response.StatusCode, nil
+	return p.Jenkins.Requester.LastResponse.StatusCode, nil
 }
