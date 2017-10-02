@@ -42,11 +42,7 @@ type prDetails struct {
 	id       int
 }
 
-func newPRDetails(
-	ctx context.Context,
-	client *github.Client,
-	notification *github.Notification,
-) (*prDetails, error) {
+func newPRDetails(ctx context.Context, client *github.Client, notification *github.Notification ) (*prDetails, error) {
 	// TODO: replace this with a proper group regexp.
 	var (
 		urlParts       = strings.Split(*notification.Subject.URL, "/")
