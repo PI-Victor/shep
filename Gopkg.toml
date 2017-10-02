@@ -22,16 +22,8 @@
 
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/adlio/trello"
-
-[[constraint]]
   name = "github.com/bndr/gojenkins"
-  version = "1.0.0"
-
-[[constraint]]
   branch = "master"
-  name = "github.com/concourse/go-concourse"
 
 [[constraint]]
   branch = "master"

@@ -3,33 +3,9 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/adlio/trello"
-  packages = ["."]
-  revision = "9b16227a39ccebfd1a3665f779136338e0dca61d"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/bmizerany/pat"
-  packages = ["."]
-  revision = "6226ea591a40176dd3ff9cd8eff81ed6ca721a00"
-
-[[projects]]
   name = "github.com/bndr/gojenkins"
   packages = ["."]
-  revision = "668c6a1cb16b659ece2e90506e643ea16abc712c"
-  version = "v1.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/concourse/atc"
-  packages = [".","event"]
-  revision = "66708a5f904b5eca68c11b1d93f63adafe472c15"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/concourse/go-concourse"
-  packages = ["concourse","concourse/eventstream","concourse/internal"]
-  revision = "c66d72ec9071240ee638c21a9ef2717d89d0ff58"
+  revision = "10d416706df701ae959182e4ae94fde6984c7c22"
 
 [[projects]]
   name = "github.com/fsnotify/fsnotify"
@@ -41,13 +17,13 @@
   branch = "master"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
-  revision = "17ce1425424ab154092bbb43af630bd647f3bb0d"
+  revision = "130e6b02ab059e7b717a096f397c5b60111cae74"
 
 [[projects]]
   branch = "master"
   name = "github.com/google/go-github"
   packages = ["github"]
-  revision = "24139d56e97a44988087d461125ed6fab91c07ac"
+  revision = "3a960f412f14b09737fec6c3cc4c66840f840afd"
 
 [[projects]]
   branch = "master"
@@ -56,40 +32,16 @@
   revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
-  name = "github.com/google/jsonapi"
-  packages = ["."]
-  revision = "46d3ced0434461be12e555852e2f1a9ed382e139"
-  version = "1.0.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/errwrap"
-  packages = ["."]
-  revision = "7554cd9344cec97297fa6649b055a8c98c2a1e55"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/go-multierror"
-  packages = ["."]
-  revision = "83588e72410abfbe4df460eeb6f30841ae47d4c4"
-
-[[projects]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
   packages = [".","hcl/ast","hcl/parser","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
-  revision = "8f6b1344a92ff8877cf24a5de9177bf7d0a2a187"
+  revision = "68e816d1c783414e79bc65b3994d9ab6b0a722ab"
 
 [[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
-
-[[projects]]
-  name = "github.com/jessevdk/go-flags"
-  packages = ["."]
-  revision = "96dc06278ce32a0e9d957d590bb987c81ee66407"
-  version = "v1.3.0"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -104,28 +56,10 @@
   revision = "d0303fe809921458f417bcf828397a65db30a7e4"
 
 [[projects]]
-  name = "github.com/pelletier/go-buffruneio"
-  packages = ["."]
-  revision = "c37440a7cf42ac63b919c752ca73a85067e05992"
-  version = "v0.2.0"
-
-[[projects]]
   name = "github.com/pelletier/go-toml"
   packages = ["."]
-  revision = "5ccdfb18c776b740aecaf085c4d9a2779199c279"
-  version = "v1.0.0"
-
-[[projects]]
-  name = "github.com/peterhellberg/link"
-  packages = ["."]
-  revision = "d1cebc7ea14a5fc0de7cb4a45acae773161642c6"
-  version = "v1.0.0"
-
-[[projects]]
-  name = "github.com/pkg/errors"
-  packages = ["."]
-  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
-  version = "v0.8.0"
+  revision = "16398bac157da96aa88f98a2df640c7f32af1da2"
+  version = "v1.0.1"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -149,7 +83,7 @@
   branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "3c0b56b677e04926dfa835a1b3f11cd4f62f076e"
+  revision = "0dacccfbaabc71b872087c1719c5380d3e185173"
 
 [[projects]]
   branch = "master"
@@ -170,46 +104,34 @@
   version = "v1.0.0"
 
 [[projects]]
-  name = "github.com/tedsuo/rata"
-  packages = ["."]
-  revision = "0649c23705dfb45a9693b668c4fc1c0666f485d9"
-  version = "v1.0.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/vito/go-sse"
-  packages = ["sse"]
-  revision = "fd69d275caac5d78d793e77ddbe9bd2001d9b88d"
-
-[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "81e90905daefcd6fd217b62423c0908922eadb30"
+  revision = "9419663f5a44be8b34ca85f08abc5fe1be11f8a3"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["context","context/ctxhttp"]
-  revision = "66aacef3dd8a676686c7ae3716979581e8b03c47"
+  packages = ["context","context/ctxhttp","html","html/atom"]
+  revision = "0a9397675ba34b2845f758fe3cd68828369c6517"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/oauth2"
   packages = [".","internal"]
-  revision = "d89af98d7c6bba047c5a2622f36bc14b8766df85"
+  revision = "bb50c06baba3d0c76f9d125c0719093e315b5b44"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "7ddbeae9ae08c6a06a59597f0c9edbc5ff2444ce"
+  revision = "314a259e304ff91bd6985da2a7149bbf91237993"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/text"
   packages = ["internal/gen","internal/triegen","internal/ucd","transform","unicode/cldr","unicode/norm"]
-  revision = "bd91bbf73e9a4a801adbfb97133c992678533126"
+  revision = "1cbadb444a806fd9430d14ad08967ed91da4fa0a"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -226,6 +148,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "af37adb82ad14f4a9b852dcf72d77eef0f5ff5ff2420e8596d11aa8e74d9a9f6"
+  inputs-digest = "37256eb9f13b2c46bc00c834bf1fe317d86c1294748e4cb0395c78a024d7c0e5"
   solver-name = "gps-cdcl"
   solver-version = 1
