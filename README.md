@@ -1,14 +1,14 @@
 ```
  _____ _    _ ______ _____
-/ ____| |  | |  ____|  __ \    GitHub, GitLab,
-| (___| |__| | |__  | |__)|    Trello,
-\___ \|  __  |  __| |  ___/    Jenkins, Travis,
-____) | |  | | |____| |        IRC, Slack.
+/ ____| |  | |  ____|  __ \
+| (___| |__| | |__  | |__)|
+\___ \|  __  |  __| |  ___/
+____) | |  | | |____| |
 |____/|_|  |_|______|_|
 ```
 
-Shep is an automation bot that handles running tests and merging pull requests
-on GitHub.  
+Shep provides automation in your CI/CD pipeline for [re]triggering test jobs and
+merging your PRs.
 For now, it's work in progress, functionality is limited to only merging PRs.
 The bot is inspired by different industry relevant automation bots such as:  
 [openshift-bot](https://github.com/openshift-bot)  
