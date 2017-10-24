@@ -15,13 +15,9 @@ type Config struct {
 
 	Timer int64 `json:"timer"`
 
-	IRCServers []IRCSettings `json:"ircServers,omitempty"`
-
 	GitHub *GitHub `json:"github"`
 
 	Jenkins *Jenkins `json:"jenkins,omitempty"`
-
-	Travis *Travis `json:"travis,omitempty"`
 
 	Labels []Label `json:"labels,omitempty"`
 }

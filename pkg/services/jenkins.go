@@ -2,6 +2,7 @@ package services
 
 import (
 	"io/ioutil"
+	"net/http"
 
 	"github.com/bndr/gojenkins"
 	"github.com/sirupsen/logrus"
@@ -10,7 +11,7 @@ import (
 // Jenkins holds the information about one or more Jenkins servers that the bot
 // should send or retrieve information from.
 type Jenkins struct {
-	URL            string             `json:"jenkinsURL"`
+	URL            *http.Client       `json:"jenkinsURL"`
 	User           string             `json:"jenkinsUser"`
 	Token          string             `json:"jenkinsToken"`
 	CACertFilePath string             `json:"caCertFilePath"`

@@ -42,7 +42,7 @@ type prDetails struct {
 	id       int
 }
 
-func newPRDetails(ctx context.Context, client *github.Client, notification *github.Notification ) (*prDetails, error) {
+func newPRDetails(ctx context.Context, client *github.Client, notification *github.Notification) (*prDetails, error) {
 	// TODO: replace this with a proper group regexp.
 	var (
 		urlParts       = strings.Split(*notification.Subject.URL, "/")
@@ -57,6 +57,7 @@ func newPRDetails(ctx context.Context, client *github.Client, notification *gith
 		return nil, err
 	}
 	prID := int(lastIndex)
+	logrus.Debugf("last index: %d", lastIndex)
 	rawPR, _, err := client.PullRequests.Get(ctx, repoOwner, repository, prID)
 	if err != nil {
 		return nil, err
@@ -73,6 +74,12 @@ func newPRDetails(ctx context.Context, client *github.Client, notification *gith
 		merged:   *rawPR.Merged,
 		id:       prID,
 	}, nil
+}
+
+func getIssueDetails(ctx context.Context, client *github.Client, notification *github.Notification) error {
+	logrus.Debug("trying to see if this is an issue...")
+	logrus.Debugf("notification is :%#v", *notification.Reason)
+	return nil
 }
 
 // NewGitHubClient returns a valid instance of a new GitHub client.
@@ -108,7 +115,10 @@ func WatchRepos(ctx context.Context, ghDetails *GitHub) error {
 	for _, notification := range notifications {
 		prDetails, err := newPRDetails(ctx, ghDetails.Client, notification)
 		if err != nil {
-			return err
+			logrus.Debugf("Failed to get new PR details: %#v", err)
+			if err = getIssueDetails(ctx, ghDetails.Client, notification); err != nil {
+				return nil
+			}
 		}
 		comments, _, err := client.Issues.ListComments(
 			ctx,
@@ -153,6 +163,11 @@ func checkComment(ctx context.Context, githubDetails *GitHub, body string, pr *p
 				return err
 			}
 		}
+		if comm == "tag" {
+			if err := addLabels(ctx, githubDetails); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -181,7 +196,7 @@ func mergePR(ctx context.Context, githubDetails *GitHub, pr *prDetails) error {
 		// than successful. i don't expect an err everytime.
 		_, _, err := githubDetails.Client.PullRequests.Merge(
 			ctx, pr.owner, pr.repo, pr.id,
-			"Merge based on [URL of PR to be filled in]",
+			"Merge based on [URL of CI/CD job]()",
 			nil,
 		)
 		if err != nil {

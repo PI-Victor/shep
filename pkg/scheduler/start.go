@@ -15,8 +15,8 @@ import (
 
 var (
 	vers       = "v0.1"
-	author     = "Victor Palade"
-	URL        = "https://github.com/PI-Victor/shep"
+	author     = "Cloudflavor Org"
+	url        = "https://github.com/cloudflavor/shep"
 	welcomeMsg = fmt.Sprintf(`
  _____ _    _ ______ _____
 / ____| |  | |  ____|  __ \       Automation Bot for VCS systems
@@ -27,7 +27,7 @@ ____) | |  | | |____| |          %s
 `,
 		vers,
 		author,
-		URL,
+		url,
 	)
 )
 
