@@ -9,6 +9,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Service abstracts away all the functionality that a service should implement.
+type Service interface {
+	LoadService(cfg *Config) error
+	StartService(cfg *Config) error
+}
+
 // Config holds the configuration options for the application.
 type Config struct {
 	DebugLevel logrus.Level `json:"debugLevel"`
@@ -18,6 +24,8 @@ type Config struct {
 	GitHub *GitHub `json:"github"`
 
 	Jenkins *Jenkins `json:"jenkins,omitempty"`
+
+	Bitbucket *Bitbucket `json:"bitbucket,omitempty"`
 
 	Labels []Label `json:"labels,omitempty"`
 }

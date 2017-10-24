@@ -65,7 +65,7 @@ func (s *Scheduler) Start(cfg *services.Config) error {
 	// TODO: move this away from service start as well.
 	go services.SetRepoSubTrue(ctx, cfg.GitHub)
 	if cfg.Timer < 45 {
-		return fmt.Errorf("expected interval to be greater than 45s, got %ds", cfg.Timer)
+		return fmt.Errorf("interval must be greater than 45s, got %ds", cfg.Timer)
 	}
 	t := (time.Duration(cfg.Timer) * time.Second)
 	duration := time.NewTicker(t)
@@ -77,4 +77,10 @@ func (s *Scheduler) Start(cfg *services.Config) error {
 		logrus.Debugf("Sleeping... %s", time.Now())
 	}
 	return nil
+}
+
+
+funct loadServices() []services.Service, error {
+	
+	return 
 }
