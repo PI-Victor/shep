@@ -71,6 +71,7 @@ func newDefaultCfg() *Config {
 }
 
 // ValidateCfg validates the configuration.
+// TODO: move this to github specific service validation.
 func ValidateCfg(cfg *Config) error {
 	if cfg.GitHub == nil {
 		return errors.New("you need to specify a GitHub token")

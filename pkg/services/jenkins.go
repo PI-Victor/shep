@@ -26,7 +26,7 @@ func newJenkinsInstance() (*Jenkins, error) {
 	return nil, nil
 }
 
-// Start creates a new Jenkins instance.
+// Start creates a new Jenkins connection.
 func (j *Jenkins) Start() error {
 	client := gojenkins.CreateJenkins(j.URL, j.User, j.Token)
 
@@ -36,7 +36,7 @@ func (j *Jenkins) Start() error {
 			return err
 		}
 		if len(caCert) == 0 {
-			logrus.Warnf("Specified CA Certificate file (%s) is empty. Using unencrypted connection", j.CACertFilePath)
+			logrus.Warnf("CA Certificate file (%s) . Using unencrypted connection", j.CACertFilePath)
 		} else {
 			client.Requester.CACert = caCert
 		}
@@ -50,9 +50,6 @@ func (j *Jenkins) Start() error {
 	logrus.Debugf("This is the jenkins instance: %#v", instance)
 	return nil
 }
-
-// Stop will gracefully stop a Jenkins instance
-func (j *Jenkins) Stop() error { return nil }
 
 // StartJob starts a new JenkinsJob
 func (j *JenkinsJob) StartJob() error { return nil }

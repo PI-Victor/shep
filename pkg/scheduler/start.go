@@ -48,6 +48,7 @@ func (s *Scheduler) Start(cfg *services.Config) error {
 		ctx    = context.Background()
 		c      = make(chan os.Signal, 1)
 	)
+
 	signal.Notify(c, os.Interrupt)
 	signal.Notify(c, syscall.SIGTERM)
 	go func() {
@@ -57,6 +58,10 @@ func (s *Scheduler) Start(cfg *services.Config) error {
 			os.Exit(0)
 		}
 	}()
+
+	if err := loadServices(); err != nil {
+		return err
+	}
 
 	// TODO: abstract away the listeners (github, gitlab, etc).
 	if err := services.NewGitHubClient(ctx, cfg); err != nil {
@@ -79,8 +84,7 @@ func (s *Scheduler) Start(cfg *services.Config) error {
 	return nil
 }
 
+func loadServices() error {
 
-funct loadServices() []services.Service, error {
-	
-	return 
+	return nil
 }
