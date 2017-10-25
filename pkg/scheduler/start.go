@@ -59,16 +59,11 @@ func (s *Scheduler) Start(cfg *services.Config) error {
 		}
 	}()
 
-	if err := loadServices(); err != nil {
+	scmServices, err := loadServices(ctx, cfg)
+	if err != nil {
 		return err
 	}
 
-	// TODO: abstract away the listeners (github, gitlab, etc).
-	if err := services.NewGitHubClient(ctx, cfg); err != nil {
-		return err
-	}
-	// TODO: move this away from service start as well.
-	go services.SetRepoSubTrue(ctx, cfg.GitHub)
 	if cfg.Timer < 45 {
 		return fmt.Errorf("interval must be greater than 45s, got %ds", cfg.Timer)
 	}
@@ -76,15 +71,37 @@ func (s *Scheduler) Start(cfg *services.Config) error {
 	duration := time.NewTicker(t)
 
 	for range duration.C {
-		if err := services.WatchRepos(ctx, cfg.GitHub); err != nil {
-			return err
+		for _, service := range scmServices {
+			logrus.Infof("%s", service)
 		}
 		logrus.Debugf("Sleeping... %s", time.Now())
 	}
 	return nil
 }
 
-func loadServices() error {
+func loadServices(ctx context.Context, cfg *services.Config) ([]services.Service, error) {
+	scmServices := []services.Service{}
 
-	return nil
+	if cfg.GitHub != nil && cfg.GitHub.Token != "" {
+		newGitHubService := services.NewGithubService(cfg)
+		// TODO: abstract away the listeners (github, gitlab, etc).
+		if err := services.NewGitHubClient(ctx, cfg); err != nil {
+			return nil, err
+		}
+		// TODO: move this away from service start as well.
+		go services.SetRepoSubTrue(ctx, cfg.GitHub)
+
+		if err := services.WatchRepos(ctx, cfg.GitHub); err != nil {
+			return nil, err
+		}
+		githuService := services.NewGithubService(cfg)
+		scmServices = append(scmServices, githuService)
+	}
+
+	if cfg.Bitbucket != nil && cfg.Bitbucket.SecretKey != "" {
+		if err := services.NewBitbucketClient(cfg); err != nil {
+			return nil, err
+		}
+	}
+	return scmServices, nil
 }

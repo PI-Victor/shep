@@ -32,6 +32,22 @@ type GitHub struct {
 	Client *github.Client `json:"-"`
 }
 
+func (g *GitHub) Validate() error {
+	return nil
+}
+
+func (g *GitHub) Run() error {
+	return nil
+}
+
+func NewGithubService(cfg *Config) *GitHub {
+	return &GitHub{
+		User:        cfg.GitHub.User,
+		Token:       cfg.GitHub.Token,
+		IgnoreRepos: cfg.GitHub.IgnoreRepos,
+	}
+}
+
 type prDetails struct {
 	state    string
 	branch   string
