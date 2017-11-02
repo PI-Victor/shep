@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -82,8 +83,8 @@ func (s *Scheduler) Start(cfg *services.Config) error {
 func loadServices(ctx context.Context, cfg *services.Config) ([]services.Service, error) {
 	scmServices := []services.Service{}
 
+	// TODO: move this to github service validation instead of here.
 	if cfg.GitHub != nil && cfg.GitHub.Token != "" {
-		newGitHubService := services.NewGithubService(cfg)
 		// TODO: abstract away the listeners (github, gitlab, etc).
 		if err := services.NewGitHubClient(ctx, cfg); err != nil {
 			return nil, err
@@ -94,14 +95,16 @@ func loadServices(ctx context.Context, cfg *services.Config) ([]services.Service
 		if err := services.WatchRepos(ctx, cfg.GitHub); err != nil {
 			return nil, err
 		}
-		githuService := services.NewGithubService(cfg)
-		scmServices = append(scmServices, githuService)
+		githubService := services.NewGithubService(cfg)
+		scmServices = append(scmServices, githubService)
 	}
 
 	if cfg.Bitbucket != nil && cfg.Bitbucket.SecretKey != "" {
-		if err := services.NewBitbucketClient(cfg); err != nil {
-			return nil, err
-		}
+		bitbucketService := services.NewBitbucketService(cfg)
+		scmServices = append(scmServices, bitbucketService)
+	}
+	if len(scmServices) == 0 {
+		return nil, errors.New("no SCM services defined")
 	}
 	return scmServices, nil
 }

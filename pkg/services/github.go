@@ -32,11 +32,11 @@ type GitHub struct {
 	Client *github.Client `json:"-"`
 }
 
-func (g *GitHub) Validate() error {
+func (g *GitHub) Validate(cfg *Config) error {
 	return nil
 }
 
-func (g *GitHub) Run() error {
+func (g *GitHub) Run(cfg *Config) error {
 	return nil
 }
 

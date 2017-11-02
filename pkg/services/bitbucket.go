@@ -18,19 +18,19 @@ type Bitbucket struct {
 }
 
 // LoadService validates if the service has the necessary config to start
-func (b *Bitbucket) LoadService(cfg *Config) error {
+func (b *Bitbucket) Validate(cfg *Config) error {
 
-	if err := b.StartService(cfg); err != nil {
+	if err := b.startService(cfg); err != nil {
 		return err
 	}
 	return nil
 }
 
 // StartService starts the bitbucket service
-func (b *Bitbucket) StartService(cfg *Config) error {
+func (b *Bitbucket) startService(cfg *Config) error {
 	// TODO: some extra validation will be needed here.
 	if cfg.Bitbucket == nil || len(cfg.Bitbucket.SecretKey) == 0 {
-		return errors.New("bitbucket config not found, skipping init...")
+		return errors.New("bitbucket config not found, skipping init")
 	}
 	// TODO: this needs an internal error to be surfaced.
 	b.Client = bitbucket.NewOAuth(cfg.Bitbucket.AppID, cfg.Bitbucket.SecretKey)
@@ -41,7 +41,7 @@ func (b *Bitbucket) StartService(cfg *Config) error {
 	return nil
 }
 
-func (b *Bitbucket) Run() error {
+func (b *Bitbucket) Run(cfg *Config) error {
 	return nil
 }
 

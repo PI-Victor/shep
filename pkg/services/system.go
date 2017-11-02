@@ -11,8 +11,8 @@ import (
 
 // Service abstracts away all the functionality that a service should implement.
 type Service interface {
-	LoadService(cfg *Config) error
-	StartService(cfg *Config) error
+	Validate(cfg *Config) error
+	Run(cfg *Config) error
 }
 
 // Config holds the configuration options for the application.
