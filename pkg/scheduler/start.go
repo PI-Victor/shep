@@ -20,7 +20,7 @@ var (
 	url        = "https://github.com/cloudflavor/shep"
 	welcomeMsg = fmt.Sprintf(`
  _____ _    _ ______ _____
-/ ____| |  | |  ____|  __ \       Automation Bot for VCS systems
+/ ____| |  | |  ____|  __ \       Automation Bot for SCM systems
 | (___| |__| | |__  | |__)|                  %s
 \___ \|  __  |  __| |  ___/             by %s
 ____) | |  | | |____| |          %s
@@ -73,7 +73,7 @@ func (s *Scheduler) Start(cfg *services.Config) error {
 
 	for range duration.C {
 		for _, service := range scmServices {
-			logrus.Infof("%s", service)
+			go service.Run(ctx)
 		}
 		logrus.Debugf("Sleeping... %s", time.Now())
 	}
@@ -82,20 +82,17 @@ func (s *Scheduler) Start(cfg *services.Config) error {
 
 func loadServices(ctx context.Context, cfg *services.Config) ([]services.Service, error) {
 	scmServices := []services.Service{}
-
 	// TODO: move this to github service validation instead of here.
 	if cfg.GitHub != nil && cfg.GitHub.Token != "" {
 		// TODO: abstract away the listeners (github, gitlab, etc).
+
 		if err := services.NewGitHubClient(ctx, cfg); err != nil {
 			return nil, err
 		}
 		// TODO: move this away from service start as well.
+		githubService := services.NewGithubService(cfg)
 		go services.SetRepoSubTrue(ctx, cfg.GitHub)
 
-		if err := services.WatchRepos(ctx, cfg.GitHub); err != nil {
-			return nil, err
-		}
-		githubService := services.NewGithubService(cfg)
 		scmServices = append(scmServices, githubService)
 	}
 

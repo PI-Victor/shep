@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -33,11 +33,7 @@ type GitHub struct {
 	Client *github.Client `json:"-"`
 }
 
-func (g *GitHub) Validate(cfg *Config) error {
-	return nil
-}
-
-func (g *GitHub) Run(cfg *Config) error {
+func (g *GitHub) Validate(ctx context.Context) error {
 	return nil
 }
 
@@ -46,6 +42,7 @@ func NewGithubService(cfg *Config) *GitHub {
 		User:        cfg.GitHub.User,
 		Token:       cfg.GitHub.Token,
 		IgnoreRepos: cfg.GitHub.IgnoreRepos,
+		Client:      cfg.GitHub.Client,
 	}
 }
 
@@ -59,9 +56,11 @@ type prDetails struct {
 	id       int
 }
 
-var cmdMapping = map[string]func(context.Context, *GitHub, *prDetails) error{
+type ghBotCommand func(context.Context, *GitHub, *prDetails) error
+
+var cmdMapping = map[string]ghBotCommand{
 	"merge": mergePR,
-	"test":  commentPR,
+	"test":  runTestJob,
 	"tag":   addLabels,
 }
 
@@ -120,29 +119,31 @@ func NewGitHubClient(ctx context.Context, cfg *Config) error {
 	if err != nil {
 		return err
 	}
-
 	cfg.GitHub.User = authClient
 	return nil
 }
 
-// WatchRepos watches the repositories in the organization that the bot is part
+// Run watches the repositories in the organization that the bot is part
 // of for events such as comments or PRs.
-func WatchRepos(ctx context.Context, ghDetails *GitHub) error {
-	client := ghDetails.Client
+func (g *GitHub) Run(ctx context.Context) error {
+	client := g.Client
 	opt := &github.NotificationListOptions{All: true}
-
+	//logrus.Debugf("This is the client %#v and these are the options: %#v and this is the context: %#v", g.Client, opt, ctx)
 	notifications, _, err := client.Activity.ListNotifications(ctx, opt)
 	if err != nil {
 		return err
 	}
 	for _, notification := range notifications {
-		prDetails, err := newPRDetails(ctx, ghDetails.Client, notification)
+		prDetails, err := newPRDetails(ctx, g.Client, notification)
 		if err != nil {
 			logrus.Debugf("Failed to get new PR details: %#v", err)
-			if err = getIssueDetails(ctx, ghDetails.Client, notification); err != nil {
-				return nil
+			if err = getIssueDetails(ctx, g.Client, notification); err != nil {
+				logrus.Debugf("We didn't get anything: %#v", err)
 			}
+			logrus.Debug("Continuing...")
+			continue
 		}
+
 		comments, _, err := client.Issues.ListComments(
 			ctx,
 			prDetails.owner,
@@ -156,7 +157,7 @@ func WatchRepos(ctx context.Context, ghDetails *GitHub) error {
 		}
 		for _, comment := range comments {
 			if lastCheck.Before(comment.GetCreatedAt()) {
-				if err := checkComment(ctx, ghDetails, comment.GetBody(), prDetails); err != nil {
+				if err := checkComment(ctx, g, comment.GetBody(), prDetails); err != nil {
 					logrus.Warningf("Failed to apply action %s", err)
 				}
 			}
@@ -178,7 +179,8 @@ func checkComment(ctx context.Context, githubDetails *GitHub, body string, pr *p
 		comm := strings.Trim(body, "[]")
 		cmd, ok := cmdMapping[comm]
 		if !ok {
-			return errors.New("Command not found")
+			logrus.Debugf("Command %s not found", comm)
+			return nil
 		}
 		if err := cmd(ctx, githubDetails, pr); err != nil {
 			return err
@@ -187,11 +189,11 @@ func checkComment(ctx context.Context, githubDetails *GitHub, body string, pr *p
 	return nil
 }
 
-func commentPR(ctx context.Context, githubDetails *GitHub, pr *prDetails) error {
+func commentPR(ctx context.Context, githubDetails *GitHub, pr *prDetails, msg *string) error {
 	logrus.Debug("Testing PR...")
-	commentBody := "Testing URL [To be filled in - CI/CD URL]"
+	commentBody := msg
 	comm := github.IssueComment{
-		Body: &commentBody,
+		Body: commentBody,
 	}
 	_, _, err := githubDetails.Client.Issues.CreateComment(ctx, pr.owner, pr.repo, pr.id, &comm)
 	if err != nil {
@@ -202,6 +204,7 @@ func commentPR(ctx context.Context, githubDetails *GitHub, pr *prDetails) error 
 
 func mergePR(ctx context.Context, githubDetails *GitHub, pr *prDetails) error {
 	logrus.Debug("Merging PR...")
+	msg := fmt.Sprintf("Merging PR branch %s into master", pr.branch)
 	isMerged, _, err := githubDetails.Client.PullRequests.IsMerged(ctx, pr.owner, pr.repo, pr.id)
 	if err != nil {
 		return err
@@ -217,6 +220,7 @@ func mergePR(ctx context.Context, githubDetails *GitHub, pr *prDetails) error {
 		if err != nil {
 			return err
 		}
+		commentPR(ctx, githubDetails, pr, &msg)
 		pr.merged = true
 	}
 	if err := deleteBranch(ctx, githubDetails, pr); err != nil {
@@ -291,5 +295,11 @@ func SetRepoSubTrue(ctx context.Context, ghDetails *GitHub) {
 }
 
 func addLabels(ctx context.Context, ghDetails *GitHub, pr *prDetails) error {
+	return nil
+}
+
+func runTestJob(ctx context.Context, ghDetails *GitHub, pr *prDetails) error {
+	msg := fmt.Sprintf("Running Test job")
+	commentPR(ctx, ghDetails, pr, &msg)
 	return nil
 }

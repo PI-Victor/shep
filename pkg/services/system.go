@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"os"
@@ -11,8 +12,8 @@ import (
 
 // Service abstracts away all the functionality that a service should implement.
 type Service interface {
-	Validate(cfg *Config) error
-	Run(cfg *Config) error
+	Validate(ctx context.Context) error
+	Run(ctx context.Context) error
 }
 
 // Config holds the configuration options for the application.
