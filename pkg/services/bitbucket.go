@@ -17,7 +17,7 @@ type Bitbucket struct {
 	Client *bitbucket.Client `json:"-"`
 }
 
-// LoadService validates if the service has the necessary config to start
+// Validate validates if the service has the necessary config to start
 func (b *Bitbucket) Validate(cfg *Config) error {
 
 	if err := b.startService(cfg); err != nil {

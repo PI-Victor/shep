@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"regexp"
 	"strconv"
 	"strings"
@@ -56,6 +57,12 @@ type prDetails struct {
 	owner    string
 	repo     string
 	id       int
+}
+
+var cmdMapping = map[string]func(context.Context, *GitHub, *prDetails) error{
+	"merge": mergePR,
+	"test":  commentPR,
+	"tag":   addLabels,
 }
 
 func newPRDetails(ctx context.Context, client *github.Client, notification *github.Notification) (*prDetails, error) {
@@ -169,20 +176,12 @@ func checkComment(ctx context.Context, githubDetails *GitHub, body string, pr *p
 	}
 	if match {
 		comm := strings.Trim(body, "[]")
-		if comm == "test" {
-			if err := commentPR(ctx, githubDetails, pr); err != nil {
-				return err
-			}
+		cmd, ok := cmdMapping[comm]
+		if !ok {
+			return errors.New("Command not found")
 		}
-		if comm == "merge" {
-			if err := mergePR(ctx, githubDetails, pr); err != nil {
-				return err
-			}
-		}
-		if comm == "tag" {
-			if err := addLabels(ctx, githubDetails); err != nil {
-				return err
-			}
+		if err := cmd(ctx, githubDetails, pr); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -291,6 +290,6 @@ func SetRepoSubTrue(ctx context.Context, ghDetails *GitHub) {
 	}
 }
 
-func addLabels(ctx context.Context, ghDetails *GitHub) error {
+func addLabels(ctx context.Context, ghDetails *GitHub, pr *prDetails) error {
 	return nil
 }
