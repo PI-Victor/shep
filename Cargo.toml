@@ -4,4 +4,4 @@ version = "0.1.0"
 authors = ["Victor Palade <victor@cloudflavor.io>"]
 
 [dependencies]
-clap = "2.31.2"
+clap = "~2.31.2"
