@@ -34,10 +34,4 @@ fn main() {
             .arg(Arg::with_name("config")
                 .help("Configuration location"))
             .get_matches();
-    
-    let c = config{
-        ip_address: String()
-    };
-
-    start(c);
 }
