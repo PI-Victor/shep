@@ -1,5 +1,7 @@
 Shep
 ---
 
-A CI/CD Bot for the cloud.
-The legacy code written in Go for this project can be found in the [legacy branch](https://github.com/cloudflavor/shep/tree/legacy)
+An automation bot for VCS to CI/CD Pipelines interaction.
+
+A work in progress rewrite in `rust` of an older project found in the [legacy
+branch](https://github.com/cloudflavor/shep/tree/legacy).

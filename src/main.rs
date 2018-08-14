@@ -1,13 +1,19 @@
 extern crate clap;
+extern crate config;
+extern crate serde;
 
-use clap::{App, AppSettings, Arg};
+#[macro_use]
+extern crate serde_derive;
 
 mod core;
 mod vcs;
 mod util;
+mod logger;
+
+use clap::{Arg, App, SubCommand, AppSettings};
 
 use core::{start};
-use util::{config};
+use util::{Configuration};
 
 const ASCIIART: &str = r#"
  _____ _    _ ______ _____
@@ -17,21 +23,36 @@ const ASCIIART: &str = r#"
 ____) | |  | | |____| |
 |____/|_|  |_|______|_|
 
-A cloud aware bot for CI/CD. 
+A cloud aware bot for CI/CD.
 "#;
 
 const VERSION: &str = "v0.1";
 
 
 fn main() {
-    let m = App::new("shep")
+    let matches = App::new("shep")
             .author("Cloudflavor Org")
             .version(VERSION)
             .about(ASCIIART)
             .setting(AppSettings::SubcommandRequiredElseHelp)
-            .arg(Arg::with_name("start")
-                .help("Start the application"))
-            .arg(Arg::with_name("config")
-                .help("Configuration location"))
+            .subcommand(
+                SubCommand::with_name("start")
+                    .about("Start Shep CI/CD bot")
+                    .arg(
+                        Arg::with_name("config")
+                            .short("c")
+                            .long("config")
+                            .value_name(".yaml")
+                            .help("Full path to yaml config")
+                            .takes_value(true)
+                            .required(true)
+                    )
+            )
             .get_matches();
+
+    if let Some(matches) = matches.subcommand_matches("start") {
+        let config = Configuration::new(matches.value_of("config").unwrap());
+        println!("this is the config {:?}", config);
+
+    }
 }

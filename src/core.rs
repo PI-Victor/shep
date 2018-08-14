@@ -1,7 +1,8 @@
-use std::net::{TcpStream, TcpListener};
+use util::Configuration;
 
-use util::{config};
+pub fn start(c: Configuration) {
+    let done = false;
+    while !done {
 
-pub fn start(c: config) {
-    let server = TcpListener::bind(c.ip_address);
+    }
 }
