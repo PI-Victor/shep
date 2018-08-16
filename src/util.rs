@@ -29,12 +29,15 @@ pub struct Configuration {
 
 #[derive(Debug, Deserialize)]
 pub struct GitHub {
+    #[serde(default)]
     pub token: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct JenkinsCI {
+    #[serde(default)]
     pub uri: String,
+    #[serde(default)]
     pub token: String,
 }
 
