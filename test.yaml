@@ -1,0 +1,6 @@
+github:
+  token: test
+
+ci_service:
+  uri: test
+  token: test

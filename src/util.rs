@@ -1,13 +1,14 @@
 extern crate config;
 
-use config::{ConfigError, Config, File, Environment};
+use log::Level;
 
+use config::{ConfigError, Config, File, Environment};
+use env_logger::{Env};
 
 const GITHUB_API_URL:  &'static str = "";
 const GITLAB_API_URL:  &'static str = "";
 const BITBUCKET_API_URL:  &'static str = "";
 const DEFAULT_IP_ADDR_BIND: &'static str = "127.0.0.1";
-
 
 #[derive(Debug, Deserialize)]
 pub struct Configuration {
@@ -23,8 +24,8 @@ pub struct Configuration {
     // GitHub specific configuration
     pub github: GitHub,
 
-    // Jenkins specific configuration
-    pub jenkins: JenkinsCI,
+    // CIService specific configuration
+    pub ci_service: CIService,
 }
 
 #[derive(Debug, Deserialize)]
@@ -34,7 +35,7 @@ pub struct GitHub {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct JenkinsCI {
+pub struct CIService {
     #[serde(default)]
     pub uri: String,
     #[serde(default)]
@@ -49,4 +50,8 @@ impl Configuration {
 
         c.try_into()
     }
+}
+
+pub fn set_logger() {
+    env_logger::init_from_env(Env::default().default_filter_or("warn"));
 }

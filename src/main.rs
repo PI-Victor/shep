@@ -1,18 +1,20 @@
+#[macro_use]
+extern crate log;
 extern crate clap;
 extern crate config;
 extern crate serde;
+extern crate env_logger;
 
 #[macro_use]
 extern crate serde_derive;
 
 mod core;
 mod util;
-mod logger;
 
 use clap::{Arg, App, SubCommand, AppSettings};
 
 use core::{start};
-use util::{Configuration};
+use util::{Configuration, set_logger};
 
 const ASCIIART: &str = r#"
  _____ _    _ ______ _____
@@ -27,6 +29,7 @@ const VERSION: &str = "v0.1";
 
 
 fn main() {
+    
     let matches = App::new("shep")
         .author("Cloudflavor Org")
         .version(VERSION)
@@ -47,8 +50,11 @@ fn main() {
         )
         .get_matches();
 
+    set_logger();
+
     if let Some(matches) = matches.subcommand_matches("start") {
         let config = Configuration::new(matches.value_of("config").unwrap());
+        debug!("Loaded configuration: {:?}", config);
         start(config.unwrap());
     }
 }
