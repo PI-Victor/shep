@@ -1,52 +1,41 @@
-extern crate config;
+use vcs::{
+    github::GitHub,
+    gitlab::GitLab,
+    bitbucket::BitBucket,
+};
 
-use config::{ConfigError, Config, File, Environment};
-
-
-const GITHUB_API_URL:  &'static str = "";
-const GITLAB_API_URL:  &'static str = "";
-const BITBUCKET_API_URL:  &'static str = "";
-const DEFAULT_IP_ADDR_BIND: &'static str = "127.0.0.1";
+use persistence::{rediskv::Redis};
 
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Configuration {
-    // path self signed or CA valid SSL certificates to be used communication between the bot and
-    // the vcs servers.
-    #[serde(default)]
-    pub ssl_certificates: String,
-
-    // ip address for the application to bind to; defaults to 127.0.0.1;
-    #[serde(default)]
-    pub ip_address: String,
-
     // GitHub specific configuration
-    pub github: GitHub,
+    pub github: Option<GitHub>,
 
-    // Jenkins specific configuration
-    pub jenkins: JenkinsCI,
+    // GitLab specific configuration
+    pub gitlab: Option<GitLab>,
+
+    // Bitbucket specific configuration
+    pub bitbucket: Option<BitBucket>,
+
+    // Redis configuration
+    pub redis: Option<Redis>,
+
 }
 
-#[derive(Debug, Deserialize)]
-pub struct GitHub {
-    #[serde(default)]
-    pub token: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct JenkinsCI {
-    #[serde(default)]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CIService {
     pub uri: String,
-    #[serde(default)]
     pub token: String,
 }
 
-impl Configuration {
-    pub fn new(path: &str) -> Result<Self, ConfigError> {
-        let mut c = Config::new();
-        c.merge(File::with_name(path))?;
-        c.merge(Environment::with_prefix("SHEP"))?;
-
-        c.try_into()
+impl Default for Configuration {
+    fn default() -> Self {
+        Configuration{
+            github: Some(GitHub::default()),
+            gitlab: Some(GitLab::default()),
+            bitbucket: Some(BitBucket::default()),
+            redis: Some(Redis::default()),
+        }
     }
 }
