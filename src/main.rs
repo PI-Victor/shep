@@ -64,7 +64,6 @@ fn main() {
         2 => log::LevelFilter::Debug,
         _ => log::LevelFilter::Trace,
     };
-    info!("{:?}", log_level);
 
     env_logger::Builder::from_default_env()
         .filter(Some(module_path!()), log_level)
@@ -72,9 +71,10 @@ fn main() {
 
     debug!("Loaded configuration: {:?}", c);
 
-    let os = actix::System::new("shep");
-
     info!("Shep up and running...");
+    let shep = actix::System::new("shep");
+    
+    let _ = shep.run();
 }
 
 impl Configuration {

@@ -1,5 +1,10 @@
-use vcs::{GitHub, GitLab, BitBucket};
-use persistence::{Redis};
+use vcs::{
+    github::GitHub,
+    gitlab::GitLab,
+    bitbucket::BitBucket,
+};
+
+use persistence::{rediskv::Redis};
 
 
 #[derive(Deserialize, Debug)]
@@ -27,10 +32,10 @@ pub struct CIService {
 impl Default for Configuration {
     fn default() -> Self {
         Configuration{
-            github: None,
-            gitlab: None,
-            bitbucket: None,
-            redis: None,
+            github: Some(GitHub::default()),
+            gitlab: Some(GitLab::default()),
+            bitbucket: Some(BitBucket::default()),
+            redis: Some(Redis::default()),
         }
     }
 }
