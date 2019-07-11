@@ -1,6 +1,5 @@
-github:
-  token: test
+log_level: 3
 
-ci_service:
-  uri: test
-  token: test
+github:
+  token: 123jsdflkjgfljdlfgjdkfg
+  user: test

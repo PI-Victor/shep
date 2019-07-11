@@ -1,57 +1,36 @@
-extern crate config;
+use vcs::{GitHub, GitLab, BitBucket};
+use persistence::{Redis};
 
-use log::Level;
 
-use config::{ConfigError, Config, File, Environment};
-use env_logger::{Env};
-
-const GITHUB_API_URL:  &'static str = "";
-const GITLAB_API_URL:  &'static str = "";
-const BITBUCKET_API_URL:  &'static str = "";
-const DEFAULT_IP_ADDR_BIND: &'static str = "127.0.0.1";
-
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Configuration {
-    // path self signed or CA valid SSL certificates to be used communication between the bot and
-    // the vcs servers.
-    #[serde(default)]
-    pub ssl_certificates: String,
-
-    // ip address for the application to bind to; defaults to 127.0.0.1;
-    #[serde(default)]
-    pub ip_address: String,
-
     // GitHub specific configuration
-    pub github: GitHub,
+    pub github: Option<GitHub>,
 
-    // CIService specific configuration
-    pub ci_service: CIService,
+    // GitLab specific configuration
+    pub gitlab: Option<GitLab>,
+
+    // Bitbucket specific configuration
+    pub bitbucket: Option<BitBucket>,
+
+    // Redis configuration
+    pub redis: Option<Redis>,
+
 }
 
-#[derive(Debug, Deserialize)]
-pub struct GitHub {
-    #[serde(default)]
-    pub token: String,
-}
-
-#[derive(Debug, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CIService {
-    #[serde(default)]
     pub uri: String,
-    #[serde(default)]
     pub token: String,
 }
 
-impl Configuration {
-    pub fn new(path: &str) -> Result<Self, ConfigError> {
-        let mut c = Config::new();
-        c.merge(File::with_name(path))?;
-        c.merge(Environment::with_prefix("SHEP"))?;
-
-        c.try_into()
+impl Default for Configuration {
+    fn default() -> Self {
+        Configuration{
+            github: None,
+            gitlab: None,
+            bitbucket: None,
+            redis: None,
+        }
     }
-}
-
-pub fn set_logger() {
-    env_logger::init_from_env(Env::default().default_filter_or("warn"));
 }
